@@ -1,18 +1,20 @@
 #!/usr/bin/env python
-import sys
+
+
 from bluetooth import *
 
-HOST = sys.argv[1]       # The remote host
-PORT = 8888                 # Server port
-
+HOST = ''          # Symbolic name
+PORT = 3     # Non-privileged port
 s=BluetoothSocket( RFCOMM )
 
-s.connect((HOST, PORT))
+s.bind((HOST, PORT))
+s.listen(1)
 
-while True :
-   message = raw_input('Send:')
-   if not message : break
-   s.send(message)
-   data = s.recv(1024)
-   print 'Received', `data`
-s.close()
+conn, addr = s.accept()
+
+print 'Connected by', addr
+while True:
+    data = conn.recv(1024)
+    if not data: break
+    conn.send(data)
+conn.close()
