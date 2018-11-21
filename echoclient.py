@@ -1,35 +1,19 @@
+#!/usr/bin/env python
 import sys
-import time
 from bluetooth import *
-import bluetooth
 
-# HOST = sys.argv[1]       # The remote host
-HOST = '10:02:B5:D4:1C:3B'
-PORT = 3                 # Server port
+# HOST = str(sys.argv[1])       # The remote host
+PORT = 8888                 # Server port
 
-# s.connect((HOST, PORT))
+s=BluetoothSocket( RFCOMM )
+#print "HOST: ", HOST
+s.connect(("B8:27:EB:51:BF:F5", 3))
 
-count = 0
+print "After"
 while True :
-   try:
-      s=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
-      s.connect((HOST, PORT))
-   except:
-      print "reconnect"
-      continue
-   # message = raw_input('Send:')
-   message = str(count)
+   message = raw_input('Send:')
    if not message : break
-
-   try:
-      s.send(message)
-      data = s.recv(1024)
-   except:
-      print "reconnect"
-      continue
+   s.send(message)
+   data = s.recv(1024)
    print 'Received', `data`
-   count = count + 1
-
-   s.close()
-   time.sleep(1)
-#s.close()
+s.close()
