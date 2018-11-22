@@ -29,13 +29,13 @@ while True: # Durable Server
             data = client_sock.recv(1024)
             client_sock.send("[awk,midQWER]")
             if len(data) == 0: break
-            print("received [%s]" % data)
+            print("[main] received %s" % data)
     except IOError:
         print ("IOERROR!!!")
         pass
 
-    print("disconnected")
+    print("[main] disconnected from " + str(client_info))
     client_sock.close()
 
 server_sock.close()
-print("all done")
+print("[main] BlueTooth server end")
