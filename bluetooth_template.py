@@ -80,12 +80,19 @@ class BLUE_COM(): # PING PONG
         print("[BlueTooth] connecting to " + host)
         ts = time.time()
         # Create the client socket
-        sock=BluetoothSocket( RFCOMM )
-        sock.connect((host, port)) # What if can't connected TODO
-        print("[BlueTooth] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
+        self.sock=BluetoothSocket(RFCOMM)
+        try: 
+            self.sock.connect((host, port)) # What if can't connected TODO
+        except: 
+            print ("[BlueTooth] Not able to Connect")
+            rc = False 
+        else : 
+            rc = True 
+            print("[BlueTooth] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
-        self.recv_thread = threading.Thread(target = self.recv_engine)
-        self.recv_thread.start()
+            self.recv_thread = threading.Thread(target = self.recv_engine)
+            self.recv_thread.start()
+        return rc 
 
 
     def close(self): 
@@ -123,7 +130,7 @@ class BLUE_COM(): # PING PONG
         self.sock.send( '['+payload+',mid'+ mid+']')
         return mid
     
-    def is_send_awk (self, mid):
+    def is_awk (self, mid):
         '''
         Input : Mid ('SDFR', "TYHG")
         Output : True (Get AWK), False (Not yet ) 
