@@ -8,7 +8,8 @@
 from bluetooth import *
 
 server_sock=BluetoothSocket( RFCOMM )
-server_sock.bind(("",PORT_ANY))
+#server_sock.bind(("",PORT_ANY))
+server_sock.bind(("",3))
 server_sock.listen(1)
 
 port = server_sock.getsockname()[1]
@@ -21,22 +22,23 @@ advertise_service( server_sock, "SampleServer",
                    profiles = [ SERIAL_PORT_PROFILE ], 
 #                   protocols = [ OBEX_UUID ] 
                     )
-                   
-print("Waiting for connection on RFCOMM channel %d" % port)
+while True: # Durable Server
+    print("Waiting for connection on RFCOMM channel %d" % port)
+    client_sock, client_info = server_sock.accept()
+    print("Accepted connection from ", client_info)
+    #client_sock.settimeout(1)                   
+    try:
+        while True:
+            data = client_sock.recv(1024)
+            client_sock.send("awk")
+            if len(data) == 0: break
+            print("received [%s]" % data)
+    except IOError:
+        print ("IOERROR!!!")
+        pass
 
-client_sock, client_info = server_sock.accept()
-print("Accepted connection from ", client_info)
+    print("disconnected")
+    client_sock.close()
 
-try:
-    while True:
-        data = client_sock.recv(1024)
-        if len(data) == 0: break
-        print("received [%s]" % data)
-except IOError:
-    pass
-
-print("disconnected")
-
-client_sock.close()
 server_sock.close()
 print("all done")
