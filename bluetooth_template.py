@@ -154,16 +154,41 @@ class BLUE_COM(): # PING PONG TODO
             # print ('[is_send_awk] MID NOT FOUND ')
             return False 
 
+    def recv_engine(self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
+        recv_sock.settimeout(1)
+        while self.is_connect:
+            try: 
+                rec = recv_sock.recv(1024) # Blocking for 1 sec. 
+                print (rec)
+            except : 
+                print ("[recv_engine] timeout ")
+                continue 
+                # logger.error("[EVwaitAnswer] read fail")
+            else: 
+                try:
+                    mid_str = rec[-8:]# ,midASDF
+                    rec = rec[:-8] # Cut off mid 
+                    #---------  Check MID --------# 
+                    if mid_str[:4] != ',mid' or (not mid_str[4:].isupper()):
+                        is_valid = False 
+                    else: 
+                        is_valid = True 
+                except: 
+                    is_valid = False 
+                    print ("[recv_engine] MID ERROR ")
+
+                if is_valid: 
+                    # self.recbufArr.append(rec)
+                    self.recbufDir[mid_str[4:]] = rec
+                    if rec != "awk":
+                        print ("Sending AWK")
+                        recv_sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
+                else: 
+                    print ("[recv_engine] Not Valid ")
+                # ------ Reset Flag --------# 
+                rec = ""
+    '''
     def recv_engine (self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
-        '''
-        Wait answer from ST_board(tid must match) and parse it, can't block exceed REC_TIMEOUT
-        Input: 
-            tid : which tid you are expecting for response.
-        Output:
-            return -1 : timeout
-            return ans(str) from ST_board : H , L , G, E
-        Note: this function is called by EVLedRead() and EvledWrite()
-        '''
         recv_sock.settimeout(1)
         rec_state = "waiting"
         rec = ""
@@ -179,12 +204,6 @@ class BLUE_COM(): # PING PONG TODO
                 # logger.error("[EVwaitAnswer] read fail")
             else: 
                 pass 
-                '''
-                if rec == START_CHAR : 
-                    rec_state = "receiving"
-                else: 
-                    print ("[Trash] rec ")
-                '''
 
             # -------- State Machine --------#
             # tStartWait = time.time()
@@ -246,3 +265,4 @@ class BLUE_COM(): # PING PONG TODO
                 # End of receiving while
             # End of Engine while 
             time.sleep(0.001) #TODO test#sleep 1ms, check device for every 1ms 
+    '''
