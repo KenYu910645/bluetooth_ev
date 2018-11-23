@@ -12,9 +12,55 @@ import time
 import random # for getMid()
 import threading
 
-REC_TIMEOUT = 0.1 # Sec 
+# REC_TIMEOUT = 0.1 # Sec 
+WAIT_AWK_MAX_TIME = 3 # sec 
+MAX_RESEND_TIMES = 6 # times 
 START_CHAR = '['
 END_CHAR = ']'
+recbufDir = dict() # key: "MID"  , value ,payload  # TODO infinitly expand 
+
+class SEND_AGENT():
+    def __init__(self, sock, payload, mid):
+        self.payload  = payload 
+        self.sock = sock
+        self.mid = mid 
+        self.is_awk = False
+        #
+        self.send_thread = threading.Thread(target = self.send_target) # Client sock ????
+        self.send_thread.start()
+
+    def send_target(self):
+        global recbufDir
+
+        for i in range(MAX_RESEND_TIMES):
+            #------ Send message -------# 
+            self.sock.send( '['+self.payload+',mid'+ self.mid+']')
+            print ("[send] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
+            t_start = time.time() 
+            while time.time() - t_start < WAIT_AWK_MAX_TIME: 
+                ans = recbufDir.pop(self.mid, "not match") # Pop out element, if exitence 
+                if ans != "not match": # Get something 
+                    if ans == 'awk':
+                        print ("[send_target] AWK(" + self.mid + ")")
+                        self.is_awk = True 
+                    else:
+                        print ('[send_target] mid is found, but content is not AWK.')
+                        self.is_awk = False 
+                    break
+                else: # Keep waiting 
+                    pass 
+                    # print ('[is_send_awk] MID NOT FOUND ')
+                    # self.is_awk = False 
+                time.sleep (0.05)
+            
+            if self.is_awk : 
+                break
+            else: 
+                print ("[send_target] Need to resend (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ")")
+                time.sleep(1) # for rest 
+
+
+        
 
 class BLUE_COM(): # PING PONG TODO 
     def __init__(self):
@@ -23,9 +69,10 @@ class BLUE_COM(): # PING PONG TODO
         self.sock = None 
         self.recv_thread = None 
         self.is_server_engine_running = False  
+        self.client_sock = None 
         #-------- For Recevied -------# 
         # self.recbufArr = []
-        self.recbufDir = dict() # key: "MID"  , value ,payload  # TODO infinitly expand 
+        
         # self.tid_counter = 0
     
     def server_engine_start(self, port = 3): # Totolly blocking function 
@@ -56,6 +103,7 @@ class BLUE_COM(): # PING PONG TODO
                 #---------
                 print("[server_engine] Waiting for connection on RFCOMM channel %d" % port)
                 client_sock, client_info = self.sock.accept() # Blocking 
+                self.client_sock = client_sock
                 print("[server_engine] Accepted connection from "+  str(client_info))
                 self.is_connect = True 
                 # TODO 
@@ -132,29 +180,10 @@ class BLUE_COM(): # PING PONG TODO
         Definetly nonblocking send.
         return mid 
         '''
-        mid = self.getMid()
-        print ("[send] Sending: " + payload + "(" + mid + ")") # totally non-blocking even if disconnect
-        self.sock.send( '['+payload+',mid'+ mid+']')
-        return mid
-    
-    def is_awk (self, mid):
-        '''
-        Input : Mid ('SDFR', "TYHG")
-        Output : True (Get AWK), False (Not yet ) 
-        '''
-        ans = self.recbufDir.pop(mid, "not match") # Pop out element, if exitence 
-
-        if ans != "not match": # Get something 
-            if ans == 'awk':
-                return True 
-            else:
-                print ('[is_send_awk] mid is found, but content is not AWK.')
-                return False
-        else: 
-            # print ('[is_send_awk] MID NOT FOUND ')
-            return False 
+        return SEND_AGENT(self.sock,payload, self.getMid())
 
     def recv_engine(self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
+        global recbufDir
         recv_sock.settimeout(1)
         while self.is_connect:
             try: 
@@ -185,7 +214,7 @@ class BLUE_COM(): # PING PONG TODO
 
                 if is_valid: 
                     # self.recbufArr.append(rec)
-                    self.recbufDir[mid_str[4:]] = rec
+                    recbufDir[mid_str[4:]] = rec
                     if rec != "awk":
                         print ("Sending AWK")
                         recv_sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
