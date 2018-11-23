@@ -42,6 +42,7 @@ class BLUE_COM(): # PING PONG TODO
             self.is_connect = False 
             self.is_server_engine_running = False 
             self.server_thread.join()
+            self.recv_thread.join()
             self.sock.close() # Server socket close 
             print("[server_engine_stop] BlueTooth server end")
         except : 
@@ -63,7 +64,7 @@ class BLUE_COM(): # PING PONG TODO
                 self.recv_thread.start()
 
                 while self.is_connect:
-                    time.time(1) 
+                    time.sleep(1) 
 
                 print ("[server_engine] Disconnection from " + str(client_info) + "Stop recv thread.")
                 self.recv_thread.join()
