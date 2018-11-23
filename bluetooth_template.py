@@ -164,12 +164,12 @@ class BLUE_COM(): # PING PONG TODO
             return ans(str) from ST_board : H , L , G, E
         Note: this function is called by EVLedRead() and EvledWrite()
         '''
-        recv_sock.settimeout(1) 
+        recv_sock.settimeout(1)
+        rec_state = "waiting"
+        rec = ""
+        recbuf = ""
         while self.is_connect : 
-            rec_state = "waiting"
-            rec = ""
-            recbuf = ""
-            try: # 
+            try: 
                 rec = recv_sock.recv(1)# Non blocking # TODO Check for blocking
                 print (rec)
             except:
@@ -177,64 +177,68 @@ class BLUE_COM(): # PING PONG TODO
                 continue 
                 # logger.error("[EVwaitAnswer] read fail")
             else: 
+                pass 
+                '''
                 if rec == START_CHAR : 
                     rec_state = "receiving"
                 else: 
                     print ("[Trash] rec ")
+                '''
 
             # -------- State Machine --------#
-            tStartWait = time.time()
-            while rec_state == "receiving" and self.is_connect: # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
+            # tStartWait = time.time()
+            # if rec_state == "receiving": # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
                 # if device.inWaiting() != 0: # Wait for ST_board answer, Should be '[H]' or '[L]'
                 #----- Timeout Check -------# 
-                if time.time() - tStartWait < REC_TIMEOUT:
-                    rec_state = "timeout"
+                #if time.time() - tStartWait < REC_TIMEOUT:
+                #    rec_state = "timeout"
                 #------ RECVEIVED--------# 
-                try: # 
-                    rec = self.sock.recv(1)# Non blocking # TODO Check for blocking
-                    print (rec)
-                except:
-                    print ("[recv_engine] read fail")
-                    # logger.error("[EVwaitAnswer] read fail")
-                    continue
-                #receive ST_board answer
-                
-                if rec_state == "receiving":
-                    if rec == END_CHAR:# is_completed
-                        # rec_state = "waiting"
-                        rec_state = "completed"
-                    elif rec == START_CHAR:
-                        recbuf = ""
-                    else:
-                        recbuf += rec
-                elif rec_state == "completed":
-                    #self.is_valid = True 
-                    #if self.is_valid:
-                    # Check mid ??!!
-                    try:
-                        mid_str = recbuf[-8:]# ,midASDF
-                        recbuf = recbuf[:-8] # Cut off mid 
-                        #---------  Check MID --------# 
-                        if mid_str[:4] != ',mid' or (not mid_str[4:].isupper()):
-                            is_valid = False 
-                        else: 
-                            is_valid = True 
-                    except: 
+            if rec_state == "waiting":
+                if rec == START_CHAR : 
+                    rec_state = "receiving"
+                else: 
+                    print ("[Trash] rec ")
+            elif rec_state == "receiving":
+                if rec == END_CHAR:# is_completed
+                    # rec_state = "waiting"
+                    rec_state = "completed"
+                elif rec == START_CHAR:
+                    recbuf = ""
+                else:
+                    recbuf += rec
+            
+            
+            if rec_state == "completed":
+                #self.is_valid = True 
+                #if self.is_valid:
+                # Check mid ??!!
+                try:
+                    mid_str = recbuf[-8:]# ,midASDF
+                    recbuf = recbuf[:-8] # Cut off mid 
+                    #---------  Check MID --------# 
+                    if mid_str[:4] != ',mid' or (not mid_str[4:].isupper()):
                         is_valid = False 
-                        print ("[recv_engine] MID ERROR ")
-
-                    if is_valid: 
-                        # self.recbufArr.append(recbuf)
-                        self.recbufDir[mid_str[4:]] = recbuf
-                        self.sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
                     else: 
-                        print ("[recv_engine] Not Valid ")
-                    break 
-                elif rec_state == "timeout":
-                    print ("[recv_engine] TIMEOUT !! ")
-                    break 
+                        is_valid = True 
+                except: 
+                    is_valid = False 
+                    print ("[recv_engine] MID ERROR ")
+
+                if is_valid: 
+                    # self.recbufArr.append(recbuf)
+                    self.recbufDir[mid_str[4:]] = recbuf
+                    self.sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
+                else: 
+                    print ("[recv_engine] Not Valid ")
                 
-                time.sleep(0.001) #TODO test#sleep 1ms, check device for every 1ms
+                # ------ Reset Flag --------# 
+                recbuf = ""
+                rec_state = "waiting"
+            #elif rec_state == "timeout":
+            #    print ("[recv_engine] TIMEOUT !! ")
+ 
+                
+                # time.sleep(0.001) #TODO test#sleep 1ms, check device for every 1ms
                 # End of receiving while
             # End of Engine while 
             time.sleep(0.001) #TODO test#sleep 1ms, check device for every 1ms 
