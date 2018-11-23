@@ -80,7 +80,7 @@ class BLUE_COM(): # PING PONG
         self.sock.bind(("",port))
         self.sock.listen(1)
 
-        self.server_thread = threading.Thread(target = self.server_engine(port))
+        self.server_thread = threading.Thread(target = self.server_engine, args=(port,))
         self.server_thread.start()
 
     def server_engine_stop(self):
@@ -103,7 +103,7 @@ class BLUE_COM(): # PING PONG
                 self.is_connect = True 
                 # TODO 
                 
-                self.recv_thread = threading.Thread(target = self.recv_engine(client_sock))
+                self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
                 self.recv_thread.start()
 
                 while self.is_connect:
@@ -135,21 +135,24 @@ class BLUE_COM(): # PING PONG
             self.is_connect = True 
             print("[BlueTooth] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
-            self.recv_thread = threading.Thread(target = self.recv_engine(self.sock))
+            self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))  # (self.sock))
             self.recv_thread.start()
+            
         return rc 
 
     def close(self): 
-        if self.sock != None:
+        # if self.sock != None:
+        try: 
             if self.recv_thread.is_alive():
-                self.recv_thread.join()
+                self.recv_thread.stop()
                 print ("[close] join recv_threading ")
             print ("Close socket")
             self.sock.close() 
             self.sock = None 
             self.is_connect = False 
-        else: 
-            print ("[BlueTooth] sock is None! Can't close.")
+        # else: 
+        except : 
+            print ("[close] Can't close.")
     
     def getMid(self):
         '''
@@ -204,6 +207,7 @@ class BLUE_COM(): # PING PONG
         '''
 
         while is_running : 
+            print "debug "
             rec_state = "waiting"
             rec = ""
             recbuf = ""
