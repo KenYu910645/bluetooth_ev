@@ -17,7 +17,7 @@ REC_TIMEOUT = 0.1 # Sec
 START_CHAR = '['
 END_CHAR = ']'
 
-'''
+
 is_running = True
 def sigint_handler(signum, frame):
     global is_running
@@ -26,7 +26,7 @@ def sigint_handler(signum, frame):
 signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
-
+'''
 
 if sys.version < '3':
     input = raw_input
@@ -95,7 +95,7 @@ class BLUE_COM(): # PING PONG
     def server_engine (self, port): # ToTally Blocking 
         #client_sock.settimeout(1)               
         try:
-            while True: # Durable Server
+            while is_running: # Durable Server
                 #---------
                 print("[server_engine] Waiting for connection on RFCOMM channel %d" % port)
                 client_sock, client_info = self.sock.accept() # Blocking 
@@ -170,7 +170,7 @@ class BLUE_COM(): # PING PONG
         Definetly nonblocking send.
         return mid 
         '''
-        print ("Sending: " + payload) # totally non-blocking even if disconnect
+        print ("[send] Sending: " + payload) # totally non-blocking even if disconnect
         mid = self.getMid()
         self.sock.send( '['+payload+',mid'+ mid+']')
         return mid
@@ -203,7 +203,7 @@ class BLUE_COM(): # PING PONG
         Note: this function is called by EVLedRead() and EvledWrite()
         '''
 
-        while True : 
+        while is_running : 
             rec_state = "waiting"
             rec = ""
             recbuf = ""
@@ -222,7 +222,7 @@ class BLUE_COM(): # PING PONG
 
             # -------- State Machine --------# 
             tStartWait = time.time()
-            while rec_state == "receiving": # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
+            while rec_state == "receiving" and is_running: # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
                 # if device.inWaiting() != 0: # Wait for ST_board answer, Should be '[H]' or '[L]'
                 #----- Timeout Check -------# 
                 if time.time() - tStartWait < REC_TIMEOUT:

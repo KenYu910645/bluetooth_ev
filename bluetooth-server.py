@@ -19,5 +19,4 @@ blue_com = BLUE_COM()
 
 blue_com.server_engine_start(port = 3)
 
-#server_sock.close()
-#print("[main] BlueTooth server end")
+
