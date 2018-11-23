@@ -26,11 +26,12 @@ class SEND_AGENT():
         self.sock = sock
         self.mid = mid 
         self.is_awk = False
+        self.logger = logger
         #
         self.send_thread = threading.Thread(target = self.send_target) # Client sock ????
         self.send_thread.start()
         #
-        self.logger = logger
+        
 
     def send_target(self):
         global recbufDir
