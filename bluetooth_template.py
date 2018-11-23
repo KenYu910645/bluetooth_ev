@@ -229,7 +229,7 @@ class BLUE_COM(): # PING PONG TODO
                 if is_valid: 
                     # self.recbufArr.append(recbuf)
                     self.recbufDir[mid_str[4:]] = recbuf
-                    if recbuf != "aws":
+                    if recbuf != "awk":
                         print ("Sending AWK")
                         recv_sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
                 else: 
