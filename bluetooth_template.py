@@ -94,7 +94,8 @@ class BLUE_COM(): # PING PONG
 
     def server_engine (self, port): # ToTally Blocking 
         #client_sock.settimeout(1)               
-        try:
+        # try:
+        if True : 
             while is_running: # Durable Server
                 #---------
                 print("[server_engine] Waiting for connection on RFCOMM channel %d" % port)
@@ -112,7 +113,8 @@ class BLUE_COM(): # PING PONG
                 print ("[server_engine] Disconnection from " + str(client_info) + "Stop recv thread.")
                 self.recv_thread.join()
         # except IOError:
-        except: 
+        # xcept: 
+        else: 
             print ("[server_engine] Something wrong at server_engine.")
 
             # print ("IOERROR!!!")
@@ -142,9 +144,11 @@ class BLUE_COM(): # PING PONG
 
     def close(self): 
         # if self.sock != None:
+        global is_running
         try: 
+            is_running = False 
             if self.recv_thread.is_alive():
-                self.recv_thread.stop()
+                self.recv_thread.join()
                 print ("[close] join recv_threading ")
             print ("Close socket")
             self.sock.close() 
@@ -207,7 +211,6 @@ class BLUE_COM(): # PING PONG
         '''
 
         while is_running : 
-            print "debug "
             rec_state = "waiting"
             rec = ""
             recbuf = ""
