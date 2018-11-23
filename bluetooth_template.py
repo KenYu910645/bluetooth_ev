@@ -151,7 +151,7 @@ class BLUE_COM(): # PING PONG TODO
                 print ('[is_send_awk] mid is found, but content is not AWK.')
                 return False
         else: 
-            print ('[is_send_awk] MID NOT FOUND ')
+            # print ('[is_send_awk] MID NOT FOUND ')
             return False 
 
     def recv_engine (self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
@@ -174,6 +174,7 @@ class BLUE_COM(): # PING PONG TODO
                 print (rec)
             except:
                 print ("[recv_engine] read fail")
+                time.sleep(0.1)
                 continue 
                 # logger.error("[EVwaitAnswer] read fail")
             else: 
@@ -209,6 +210,7 @@ class BLUE_COM(): # PING PONG TODO
             
             
             if rec_state == "completed":
+                print ("COmpleted recbuf: " + str(recbuf))
                 #self.is_valid = True 
                 #if self.is_valid:
                 # Check mid ??!!
@@ -227,7 +229,9 @@ class BLUE_COM(): # PING PONG TODO
                 if is_valid: 
                     # self.recbufArr.append(recbuf)
                     self.recbufDir[mid_str[4:]] = recbuf
-                    self.sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
+                    if recbuf != "aws":
+                        print ("Sending AWK")
+                        recv_sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
                 else: 
                     print ("[recv_engine] Not Valid ")
                 
