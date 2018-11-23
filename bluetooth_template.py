@@ -123,7 +123,7 @@ class BLUE_COM(): # PING PONG TODO
         # output = str(self.tid_counter)
         output = "" 
         for i in range(4) : 
-            output += chr(random.randint(1,26) + 65)
+            output += chr(random.randint(0,25) + 65)
         return output
 
     def send (self, payload):
@@ -132,8 +132,8 @@ class BLUE_COM(): # PING PONG TODO
         Definetly nonblocking send.
         return mid 
         '''
-        print ("[send] Sending: " + payload) # totally non-blocking even if disconnect
         mid = self.getMid()
+        print ("[send] Sending: " + payload + "(" + mid + ")") # totally non-blocking even if disconnect
         self.sock.send( '['+payload+',mid'+ mid+']')
         return mid
     
@@ -161,7 +161,7 @@ class BLUE_COM(): # PING PONG TODO
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 print (rec)
             except : 
-                print ("[recv_engine] timeout ")
+                # print ("[recv_engine] timeout ")
                 continue 
                 # logger.error("[EVwaitAnswer] read fail")
             else:

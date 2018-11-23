@@ -32,6 +32,7 @@ while is_running:
             break
         else:
             time.sleep(0.1)
+    time.sleep (1)
 
 print ("[Main] close socket")
 blue_com.close() 
