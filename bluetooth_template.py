@@ -164,15 +164,21 @@ class BLUE_COM(): # PING PONG TODO
                 print ("[recv_engine] timeout ")
                 continue 
                 # logger.error("[EVwaitAnswer] read fail")
-            else: 
+            else:
+                is_valid = False 
                 try:
-                    mid_str = rec[-8:]# ,midASDF
-                    rec = rec[:-8] # Cut off mid 
-                    #---------  Check MID --------# 
-                    if mid_str[:4] != ',mid' or (not mid_str[4:].isupper()):
-                        is_valid = False 
+                    #---------  Check start and end Char -------# 
+                    if rec[0] == START_CHAR or rec[-1] == END_CHAR:
+                        rec = rec[1:-1] # Del '[' and ']'
+                        mid_str = rec[-8:]# ,midASDF
+                        rec = rec[:-8] # Cut off mid 
+                        #---------  Check MID --------# 
+                        if mid_str[:4] != ',mid' or (not mid_str[4:].isupper()):
+                            pass 
+                        else: 
+                            is_valid = True 
                     else: 
-                        is_valid = True 
+                        pass 
                 except: 
                     is_valid = False 
                     print ("[recv_engine] MID ERROR ")
