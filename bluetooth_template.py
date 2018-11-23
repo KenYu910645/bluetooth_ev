@@ -215,8 +215,11 @@ class BLUE_COM(): # PING PONG TODO
                     # self.recbufArr.append(rec)
                     recbufDir[mid_str[4:]] = rec
                     if rec != "awk":
-                        # print ("[BLUETOOTH] Sending AWK")
+                        self.logger.info("[BLUETOOTH] Received: " + rec )
+                        self.logger.debug("[BLUETOOTH] Sending AWK")
                         recv_sock.send( '[awk,mid'+mid_str[4:]+']') # Send AWK to back to sender 
+                    else :  # Received AWK 
+                        pass 
                 else: 
                     self.logger.error("[[BLUETOOTH]] received not valid msg.")
                 # ------ Reset Flag --------# 
