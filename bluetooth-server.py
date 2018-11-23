@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from bluetooth_template import BLUE_COM
+from global_logger import logger
 import threading
 import time 
 import signal
@@ -25,7 +26,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
 
-blue_com = BLUE_COM()
+blue_com = BLUE_COM(logger)
 
 blue_com.server_engine_start(port = 3)
 

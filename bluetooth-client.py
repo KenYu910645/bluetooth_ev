@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from bluetooth_template import BLUE_COM
+from global_logger import logger
 import signal 
 import time 
 
@@ -15,7 +16,7 @@ signal.signal(signal.SIGTERM, sigint_handler)
 
 WAIT_AWK_MAX_TIME = 20 # sec 
 
-blue_com = BLUE_COM()
+blue_com = BLUE_COM(logger)
 
 while blue_com.connect('B8:27:EB:51:BF:F5', 3) == False and is_running :
     time.sleep(1)
