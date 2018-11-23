@@ -10,66 +10,19 @@ from bluetooth import *
 import sys
 import time
 import random # for getMid()
-import signal
 import threading
 
 REC_TIMEOUT = 0.1 # Sec 
 START_CHAR = '['
 END_CHAR = ']'
 
-
-is_running = True
-def sigint_handler(signum, frame):
-    global is_running
-    is_running = False
-    print('[sigint_handler] catched interrupt signal!')
-signal.signal(signal.SIGINT, sigint_handler)
-signal.signal(signal.SIGHUP, sigint_handler)
-signal.signal(signal.SIGTERM, sigint_handler)
-'''
-
-if sys.version < '3':
-    input = raw_input
-
-addr = None
-
-if len(sys.argv) < 2:
-    print("no device specified.  Searching all nearby bluetooth devices for")
-    print("the SampleServer service")
-else:
-    addr = sys.argv[1]
-    print("Searching for SampleServer on %s" % addr)
-'''
-'''
-# search for the SampleServer service
-uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
-t_s = time.time()
-service_matches = find_service( uuid = uuid, address = addr )
-print("Take " + str(time.time() - t_s) + "sec to find server.")
-print ("service_matches: " + str(service_matches))
-
-if len(service_matches) == 0:
-    print("couldn't find the SampleServer service =(")
-    sys.exit(0)
-
-first_match = service_matches[0]
-port = first_match["port"]
-name = first_match["name"]
-host = first_match["host"]
-
-print("connecting to \"%s\" on %s" % (name, host))
-
-# Create the client socket
-sock=BluetoothSocket( RFCOMM )
-sock.connect((host, port))
-'''
-
-class BLUE_COM(): # PING PONG 
+class BLUE_COM(): # PING PONG TODO 
     def __init__(self):
         # -------- Connection --------# 
         self.is_connect = False
         self.sock = None 
         self.recv_thread = None 
+        self.is_server_engine_running = False  
         #-------- For Recevied -------# 
         # self.recbufArr = []
         self.recbufDir = dict() # key: "MID"  , value ,payload  # TODO infinitly expand 
@@ -80,14 +33,16 @@ class BLUE_COM(): # PING PONG
         self.sock.bind(("",port))
         self.sock.listen(1)
 
+        self.is_server_engine_running = True 
         self.server_thread = threading.Thread(target = self.server_engine, args=(port,))
         self.server_thread.start()
 
     def server_engine_stop(self):
         try:
+            self.is_connect = False 
+            self.is_server_engine_running = False 
             self.server_thread.join()
             self.sock.close() # Server socket close 
-            self.is_connect = False 
             print("[server_engine_stop] BlueTooth server end")
         except : 
             print("[server_engine_stop] Fail to close socket or server engine.")
@@ -96,7 +51,7 @@ class BLUE_COM(): # PING PONG
         #client_sock.settimeout(1)               
         # try:
         if True : 
-            while is_running: # Durable Server
+            while self.is_server_engine_running: # Durable Server
                 #---------
                 print("[server_engine] Waiting for connection on RFCOMM channel %d" % port)
                 client_sock, client_info = self.sock.accept() # Blocking 
@@ -144,16 +99,15 @@ class BLUE_COM(): # PING PONG
 
     def close(self): 
         # if self.sock != None:
-        global is_running
         try: 
-            is_running = False 
+            self.is_connect = False 
             if self.recv_thread.is_alive():
+                print ("[close] waiting join recv_threading ")
                 self.recv_thread.join()
-                print ("[close] join recv_threading ")
+                # print ("[close] waiting join recv_threading ")
             print ("Close socket")
             self.sock.close() 
             self.sock = None 
-            self.is_connect = False 
         # else: 
         except : 
             print ("[close] Can't close.")
@@ -209,8 +163,8 @@ class BLUE_COM(): # PING PONG
             return ans(str) from ST_board : H , L , G, E
         Note: this function is called by EVLedRead() and EvledWrite()
         '''
-
-        while is_running : 
+        recv_sock.settimeout(1) 
+        while self.is_connect : 
             rec_state = "waiting"
             rec = ""
             recbuf = ""
@@ -227,9 +181,9 @@ class BLUE_COM(): # PING PONG
                 else: 
                     print ("[Trash] rec ")
 
-            # -------- State Machine --------# 
+            # -------- State Machine --------#
             tStartWait = time.time()
-            while rec_state == "receiving" and is_running: # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
+            while rec_state == "receiving" and self.is_connect: # time.time() - tStartWait < REC_TIMEOUT: # ~= 0.1 sec
                 # if device.inWaiting() != 0: # Wait for ST_board answer, Should be '[H]' or '[L]'
                 #----- Timeout Check -------# 
                 if time.time() - tStartWait < REC_TIMEOUT:

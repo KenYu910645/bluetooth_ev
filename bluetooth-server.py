@@ -3,6 +3,7 @@
 from bluetooth_template import BLUE_COM
 import threading
 import time 
+import signal
 
 '''
 uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
@@ -15,8 +16,22 @@ advertise_service( server_sock, "SampleServer",
                     )
 '''
 
+is_running = True
+def sigint_handler(signum, frame):
+    global is_running
+    is_running = False
+    print('[sigint_handler] catched interrupt signal!')
+signal.signal(signal.SIGINT, sigint_handler)
+signal.signal(signal.SIGHUP, sigint_handler)
+signal.signal(signal.SIGTERM, sigint_handler)
+
 blue_com = BLUE_COM()
 
 blue_com.server_engine_start(port = 3)
+
+while is_running:
+    pass 
+print ("[Main] server_engine_stop")
+blue_com.server_engine_stop()
 
 
