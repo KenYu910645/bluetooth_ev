@@ -23,6 +23,7 @@ END_CHAR = ']'
 KEEPALIVE = 2 # sec ping,pong every 2 sec , 
 # recbufDir = dict() # key: "MID"  , value ,payload  # TODO infinitly expand 
 recbufList  = [] # [mid  ,  msg_type , content ]
+recAwkDir = dict() # key: "MID" , value "AWK"
 
 class SEND_AGENT():
     def __init__(self, sock, payload, mid, logger):
@@ -37,26 +38,22 @@ class SEND_AGENT():
         #
         
     def send_target(self):
-        global recbufList
+        global recAwkDir
         for i in range(MAX_RESEND_TIMES):
             #------ Send message -------# 
             self.sock.send( '['+self.payload+',mid'+ self.mid+']')
             self.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
             t_start = time.time() 
             while time.time() - t_start < WAIT_AWK_MAX_TIME: 
-                # ans = recbufList.pop(self.mid, "not match") # Pop out element, if exitence 
-                ans  = "not match"
-                for i in recbufList: 
-                    if i[0] == self.mid:
-                        ans = i[1] # Msg_type 
-                        break 
-                if ans != "not match": # Get something 
-                    if ans == 'AWK':
-                        self.logger.info("[BLUETOOTH] Get AWK (" + self.mid + ")")
-                        self.is_awk = True 
-                    else:
-                        self.logger.error ('[BLUETOOTH] mid is matched, but no AWK. This is probably because of communication problem. ')
-                        self.is_awk = False 
+                ans = recAwkDir.pop(self.mid, "not match") # Pop out element, if exitence 
+                #ans  = "not match"
+                #for i in range(len(recbufList)): 
+                #    if recbufList[i][0] == self.mid:
+                #        ans = recbufList.pop(i) # Msg_type 
+                #        break 
+                if ans != "not match": # Get AWK 
+                    self.logger.info("[BLUETOOTH] Get AWK (" + self.mid + ")")
+                    self.is_awk = True 
                     break
                 else: # Keep waiting 
                     pass 
@@ -130,20 +127,18 @@ class BLUE_COM(): # PING PONG TODO
                 # print "AFter "
                 if self.is_connect : 
                     #----  Check KeepAlive ------# 
-                    if recbufList != []: 
-                        msg_type = recbufList[0][1]
-                        if msg_type == 'AWK': 
-                            pass 
-                        elif msg_type == 'DISCONNECT': # Close connection with  client 
+                    if recbufList != []:
+                        msg = recbufList.pop(0) # FIFO
+                        if msg[1] == 'DISCONNECT': # Close connection with  client 
                             self.close(self.client_sock)
-                        elif msg_type == 'PING':
-                            pass 
-                        elif msg_type == 'CMD':
-                            pass 
+                        elif msg[1] == 'PING':
+                            self.logger.info("[BLUETOOTH] Get PING  ") 
+                        elif msg[1] == 'CMD':
+                            self.logger.info("[BLUETOOTH] Get cmd ") 
                         else: 
-                            pass 
+                            self.logger.error("[BLUETOOTH] Unresconized cmd: " + msg_type) 
                     else: 
-                        pass # nothing to do 
+                        print ("nothing to do ")
                     
                 else: # Need to Reconnect 
                     connection_threading  = threading.Thread(target = self.incoming_connection)
@@ -161,7 +156,7 @@ class BLUE_COM(): # PING PONG TODO
         # xcept: 
         else: 
             self.logger.error("[BLUETOOTH] Something wrong at server_engine.")
-
+        self.logger.info("[BLUETOOTH] END of server_engine")
             # print ("IOERROR!!!")
             # print("[main] disconnected from " + str(client_info))
         
@@ -229,7 +224,7 @@ class BLUE_COM(): # PING PONG TODO
         return SEND_AGENT(self.sock,payload, self.getMid(), self.logger)
 
     def recv_engine(self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
-        global recbufList
+        global recbufList, recAwkDir
         recv_sock.settimeout(1)
         while self.is_connect:
             try: 
@@ -259,9 +254,9 @@ class BLUE_COM(): # PING PONG TODO
                     self.logger.error ("[BLUETOOTH] recv_engine MID ERROR ")
 
                 if is_valid: 
-                    
                     if rec == "AWK":
-                        recbufList.append([mid_str[4:], rec , ""])
+                        # recbufList.append([mid_str[4:], rec , ""])
+                        recAwkDir[[mid_str[4:]] = rec
                     elif rec == "PING":
                         pass # TODO 
                     else: 
