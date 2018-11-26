@@ -136,7 +136,7 @@ class BLUE_COM(): # PING PONG TODO
                         elif msg[1] == 'CMD':
                             self.logger.info("[BLUETOOTH] Get cmd ") 
                         else: 
-                            self.logger.error("[BLUETOOTH] Unresconized cmd: " + msg_type) 
+                            self.logger.error("[BLUETOOTH] Unresconized cmd: " + msg[1]) 
                     else: 
                         print ("nothing to do ")
                     
@@ -256,7 +256,7 @@ class BLUE_COM(): # PING PONG TODO
                 if is_valid: 
                     if rec == "AWK":
                         # recbufList.append([mid_str[4:], rec , ""])
-                        recAwkDir[[mid_str[4:]] = rec
+                        recAwkDir[mid_str[4:]] = rec
                     elif rec == "PING":
                         pass # TODO 
                     else: 
