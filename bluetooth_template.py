@@ -142,7 +142,7 @@ class BLUE_COM(): # PING PONG TODO
                         if   msg[1] == 'DISCONNECT': # Close connection with  client 
                             self.close(self.client_sock)
                         elif msg[1] == 'PING':
-                            self.logger.info("[BLUETOOTH] Get PING  ") 
+                            self.logger.info("[BLUETOOTH] Get PING  ")
                         elif msg[1] == 'CMD':
                             self.logger.info("[BLUETOOTH] Get cmd ") 
                         else: 
@@ -195,7 +195,7 @@ class BLUE_COM(): # PING PONG TODO
         ts = time.time()
         # Create the client socket
         self.sock=BluetoothSocket(RFCOMM)
-        self.sock.settimeout(10) # Timeout 10 sec 
+        # self.sock.settimeout(10) # Timeout 10 sec  # TODO This will cause the bug 
         try: 
             self.sock.connect((host, port)) # What if can't connected TODO
         except BluetoothError as e:
@@ -207,6 +207,7 @@ class BLUE_COM(): # PING PONG TODO
         else : 
             rc = True 
             self.is_connect = True 
+            self.keepAlive_count = time.time()
             self.logger.info("[BLUETOOTH] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
             self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))  # (self.sock))
@@ -220,7 +221,6 @@ class BLUE_COM(): # PING PONG TODO
             if time.time() - t_s  > 3 : # Only wait 3 sec
                 self.logger.warning ("[BLUETOOTH] Fail to send DISCONNECT in 3 sec.") 
                 break
-        
         self.close(self.sock)  # Close youself. 
 
     def close(self, socket): 
@@ -259,6 +259,14 @@ class BLUE_COM(): # PING PONG TODO
         global recbufList, recAwkDir
         recv_sock.settimeout(1)
         while self.is_connect:
+            # ------- PING PONG -------# Keep alive 
+            if time.time() - self.keepAlive_count >= KEEPALIVE * 1.5 : # Give up connection
+                self.is_connect = False 
+                self.logger.warning ("[BLUETOOTH] Disconnected, because connection isn't response.")
+                continue
+            elif self.client_sock == None and time.time() - self.keepAlive_count >= KEEPALIVE: # Only for client to send "PING"
+                self.sock.send('[PING,mid'+ self.getMid()+']')
+            #---------RECV -----------# 
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 self.logger.debug("rec: " + rec)
@@ -292,8 +300,11 @@ class BLUE_COM(): # PING PONG TODO
                     if rec == "AWK":
                         # recbufList.append([mid_str[4:], rec , ""])
                         recAwkDir[mid_str[4:]] = rec
-                    elif rec == "PING":
-                        pass # TODO 
+                    elif rec == "PING": # Server recv 
+                        self.keepAlive_count = time.time()
+                        self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
+                    elif rec == "PONG":# Client  recv 
+                        self.keepAlive_count = time.time()
                     else: 
                         self.logger.info("[BLUETOOTH] Received: " + rec )
                         self.logger.debug("[BLUETOOTH] Sending AWK")
