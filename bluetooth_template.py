@@ -40,7 +40,7 @@ class SEND_AGENT():
     def send_target(self):
         global recAwkDir
         for i in range(MAX_RESEND_TIMES):
-            #------ Send message -------# 
+            #------ Send message -------#  # TODO 
             self.sock.send( '['+self.payload+',mid'+ self.mid+']')
             self.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
             t_start = time.time() 
@@ -160,7 +160,6 @@ class BLUE_COM(): # PING PONG TODO
                             self.logger.debug("[BLUETOOTH] Timeout." )
                         else:
                             self.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
-                       
                     else: 
                         self.client_sock = client_sock
                         self.logger.info("[BLUETOOTH] Accepted connection from "+  str(client_info))
@@ -199,8 +198,11 @@ class BLUE_COM(): # PING PONG TODO
         self.sock.settimeout(10) # Timeout 10 sec 
         try: 
             self.sock.connect((host, port)) # What if can't connected TODO
-        except: 
-            self.logger.error("[BLUETOOTH] Not able to Connect")
+        except BluetoothError as e:
+            if e.args[0] == 'timed out':
+                self.logger.debug("[BLUETOOTH] Connection Timeout 10 sec ." )
+            else:
+                self.logger.error("[BLUETOOTH] Not able to Connect, BluetoothError: " + str(e) )
             rc = False 
         else : 
             rc = True 
