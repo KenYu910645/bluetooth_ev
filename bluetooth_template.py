@@ -100,13 +100,13 @@ class BLUE_COM(): # PING PONG TODO
             self.logger.info("[BLUETOOTH] Waiting server thread to join...")
             self.server_thread.join(10)
         except : 
-            self.logger.error("[BLUETOOTH] Fail to close server thread.")
+            self.logger.error("[BLUETOOTH] Fail to join server thread.")
         
         try:
             self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
             self.recv_thread.join(10)
         except : 
-            self.logger.error("[BLUETOOTH] Fail to recv thread.")
+            self.logger.error("[BLUETOOTH] Fail to join recv thread.")
         
         try: 
             self.sock.close(self.sock) # Server socket close 
@@ -148,7 +148,7 @@ class BLUE_COM(): # PING PONG TODO
                             self.logger.info("[BLUETOOTH] Get cmd ") 
                         else: 
                             self.logger.error("[BLUETOOTH] Unresconized cmd: " + msg[1]) 
-                    else: 
+                    else:
                         print ("nothing to do ")
                     
                 else: # Need to Reconnect 
@@ -244,7 +244,6 @@ class BLUE_COM(): # PING PONG TODO
             except : 
                 # print ("[recv_engine] timeout ")
                 print ("except : timeout ")
-                continue 
                 # logger.error("[EVwaitAnswer] read fail")
             else:
                 is_valid = False 
@@ -284,6 +283,9 @@ class BLUE_COM(): # PING PONG TODO
                     self.logger.error("[[BLUETOOTH]] received not valid msg.")
                 # ------ Reset Flag --------# 
                 rec = ""
+                # End of else 
+            time.sleep(0.1)
+            # End of while 
     '''
     def recv_engine (self, recv_sock): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
         recv_sock.settimeout(1)
