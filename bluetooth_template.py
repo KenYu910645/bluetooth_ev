@@ -52,7 +52,7 @@ class SEND_AGENT():
                 time.sleep (1)
             else: 
                 self.is_awk = True 
-                break
+                return 
         self.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
 
     def send_target(self):
@@ -85,7 +85,7 @@ class SEND_AGENT():
                     time.sleep (0.05)
             
                 if self.is_awk : 
-                    break
+                    return 
                 else: 
                     self.logger.warning("[BLUETOOTH] Need to resend (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ", "+ self.mid +")")
                     time.sleep(1) # for rest 
@@ -333,7 +333,7 @@ class BLUE_COM(): # PING PONG TODO
                         self.logger.info ("[BLUETOOTH] Received PING ")
                         self.keepAlive_count = time.time()
                         # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
-                        self.send('PING', 0)
+                        self.send('PONG', 0)
                         # self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
                     elif rec == "PONG":# Client  recv 
                         self.logger.info ("[BLUETOOTH] Received PONG ")
