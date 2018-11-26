@@ -7,11 +7,13 @@
 # $Id: rfcomm-client.py 424 2006-08-24 03:35:54Z albert $
 
 from bluetooth import *
+from global_logger import logger 
 import sys
 import time
 import random # for getMid()
 import threading
 import logging 
+import gobject
 
 # REC_TIMEOUT = 0.1 # Sec 
 WAIT_AWK_MAX_TIME = 3 # sec 
@@ -33,10 +35,8 @@ class SEND_AGENT():
         self.send_thread.start()
         #
         
-
     def send_target(self):
         global recbufDir
-
         for i in range(MAX_RESEND_TIMES):
             #------ Send message -------# 
             self.sock.send( '['+self.payload+',mid'+ self.mid+']')
@@ -97,27 +97,32 @@ class BLUE_COM(): # PING PONG TODO
             self.server_thread.join()
             self.recv_thread.join()
             self.sock.close(self.sock) # Server socket close 
-            print("[BLUETOOTH] BlueTooth server end")
+            self.logger.info("[BLUETOOTH] BlueTooth server end")
         except : 
-            print("[BLUETOOTH] Fail to close socket or server engine.")
+            self.logger.error("[BLUETOOTH] Fail to close socket or server engine.")
 
-    def server_engine (self, port): # ToTally Blocking 
+    def incoming_connection(self):
+        self.logger.info("[BLUETOOTH] Waiting for connection on RFCOMM channel %d" % 3)
+        client_sock, client_info = self.sock.accept() # Blocking 
+        self.client_sock = client_sock
+        self.logger.info("[BLUETOOTH] Accepted connection from "+  str(client_info))
+        self.is_connect = True 
+        self.keepAlive_count = time.time() 
+        # TODO 
+        
+        self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
+        self.recv_thread.start()
+    
+    def server_engine (self): # ToTally Blocking 
         global recbufDir
         #client_sock.settimeout(1)
         # try:
         if True : 
             while self.is_server_engine_running: # Durable Server
                 #---------
-                print("[BLUETOOTH] Waiting for connection on RFCOMM channel %d" % port)
-                client_sock, client_info = self.sock.accept() # Blocking 
-                self.client_sock = client_sock
-                print("[BLUETOOTH] Accepted connection from "+  str(client_info))
-                self.is_connect = True 
-                self.keepAlive_count = time.time() 
-                # TODO 
-                
-                self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
-                self.recv_thread.start()
+                print "Before"
+                gobject.io_add_watch(self.sock, gobject.IO_IN, self.incoming_connection)
+                print "AFter "
 
                 while self.is_connect:
                     #----  Check KeepAlive ------# 
@@ -133,9 +138,9 @@ class BLUE_COM(): # PING PONG TODO
                             pass 
                         
                     time.sleep(0.1) 
-
-                self.logger.warning("[BLUETOOTH] Disconnection from " + str(client_info) + "Stop recv thread.")
-                self.recv_thread.join()
+                # TODO 
+                #self.logger.warning("[BLUETOOTH] Disconnection from " + str(client_info) + "Stop recv thread.")
+                #self.recv_thread.join()
         # except IOError:
         # xcept: 
         else: 
@@ -147,7 +152,7 @@ class BLUE_COM(): # PING PONG TODO
         # client_sock.close()
 
     def connect (self, host = 'B8:27:EB:51:BF:F5', port = 3):
-        print("[BLUETOOTH] connecting to " + host)
+        self.logger.info("[BLUETOOTH] connecting to " + host)
         ts = time.time()
         # Create the client socket
         self.sock=BluetoothSocket(RFCOMM)
@@ -159,7 +164,7 @@ class BLUE_COM(): # PING PONG TODO
         else : 
             rc = True 
             self.is_connect = True 
-            print("[BLUETOOTH] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
+            self.logger.info("[BLUETOOTH] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
             self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))  # (self.sock))
             self.recv_thread.start()

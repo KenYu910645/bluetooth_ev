@@ -21,7 +21,7 @@ is_running = True
 def sigint_handler(signum, frame):
     global is_running
     is_running = False
-    print('[sigint_handler] catched interrupt signal!')
+    logger.warning('[sigint_handler] catched interrupt signal!')
 signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
