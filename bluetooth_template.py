@@ -119,10 +119,7 @@ class BLUE_COM(): # PING PONG TODO
         # try:
         if True : 
             while self.is_server_engine_running: # Durable Server
-                #---------
-                print "Before"
                 gobject.io_add_watch(self.sock, gobject.IO_IN, self.incoming_connection)
-                print "AFter "
 
                 while self.is_connect:
                     #----  Check KeepAlive ------# 
@@ -138,6 +135,7 @@ class BLUE_COM(): # PING PONG TODO
                             pass 
                         
                     time.sleep(0.1) 
+                time.sleep(0.1)
                 # TODO 
                 #self.logger.warning("[BLUETOOTH] Disconnection from " + str(client_info) + "Stop recv thread.")
                 #self.recv_thread.join()
