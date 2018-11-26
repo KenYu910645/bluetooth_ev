@@ -155,7 +155,7 @@ class BLUE_COM(): # PING PONG TODO
                     self.sock.settimeout(10)
                     try: 
                         client_sock, client_info = self.sock.accept() # Blocking for 10 sec
-                    except self.sock.timeout:
+                    except socket.timeout:
                         self.logger.debug("[BLUETOOTH] Timeout." )
                     else: 
                         self.client_sock = client_sock
@@ -256,7 +256,7 @@ class BLUE_COM(): # PING PONG TODO
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 self.logger.debug("rec: " + rec)
-            except recv_sock.timeout: 
+            except socket.timeout: 
                 # print ("[recv_engine] timeout ")
                 print ("except : timeout ")
                 # logger.error("[EVwaitAnswer] read fail")
