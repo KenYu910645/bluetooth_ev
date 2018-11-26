@@ -7,6 +7,7 @@
 # $Id: rfcomm-client.py 424 2006-08-24 03:35:54Z albert $
 
 from bluetooth import *
+import socket
 from global_logger import logger 
 import sys
 import time
