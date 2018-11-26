@@ -17,10 +17,11 @@ while True :
    s.send(message)
    print ("Send message")
    print ("Before recv") 
-   try:  
-      data = s.recv(1024)
-   except: 
-      print ("except")
+   #try:
+   if True:  
+       data = s.recv(1024)
+   #except: 
+   #   print ("except")
    else: 
       print ("After recv")  
       print 'Received', `data`

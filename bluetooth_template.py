@@ -252,7 +252,7 @@ class BLUE_COM(): # PING PONG TODO
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 self.logger.debug("rec: " + rec)
-            except socket.timeout: 
+            except recv_sock.timeout: 
                 # print ("[recv_engine] timeout ")
                 print ("except : timeout ")
                 # logger.error("[EVwaitAnswer] read fail")
