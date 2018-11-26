@@ -174,6 +174,10 @@ class BLUE_COM(): # PING PONG TODO
         # client_sock.close()
 
     def connect (self, host = 'B8:27:EB:51:BF:F5', port = 3):
+        '''
+        Only for client socket 
+        '''
+        self.sock.settimeout(10) # Timeout 10 sec 
         self.logger.info("[BLUETOOTH] connecting to " + host)
         ts = time.time()
         # Create the client socket
@@ -241,10 +245,12 @@ class BLUE_COM(): # PING PONG TODO
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 self.logger.debug("rec: " + rec)
-            except : 
+            except socket.timeout: 
                 # print ("[recv_engine] timeout ")
                 print ("except : timeout ")
                 # logger.error("[EVwaitAnswer] read fail")
+            except:
+                self.logger.error("[BLUETOOTH] something wrong at recv()")
             else:
                 is_valid = False 
                 try:
