@@ -26,17 +26,33 @@ recbufList  = [] # [mid  ,  msg_type , content ]
 recAwkDir = dict() # key: "MID" , value "AWK"
 
 class SEND_AGENT():
-    def __init__(self, sock, payload, mid, logger):
+    def __init__(self, sock, payload, mid, logger, qos = 1):
         self.payload  = payload 
         self.sock = sock
         self.mid = mid 
         self.is_awk = False
+        self.qos = qos 
         self.logger = logger
         #
-        self.send_thread = threading.Thread(target = self.send_target) # Client sock ????
-        self.send_thread.start()
+        if qos == 1 : 
+            self.send_thread = threading.Thread(target = self.send_target) # Client sock ????
+            self.send_thread.start()
+        elif qos == 0 : 
+            self.send_thread = threading.Thread(target = self.send_no_trace) # Client sock ????
+            self.send_thread.start()
         #
         
+    def send_no_trace(self) : # QOS0 # PING PONG , AWK
+        for i in range(MAX_RESEND_TIMES):
+            try: 
+                self.sock.send( '['+self.payload+',mid'+ self.mid+']')
+            except : 
+                self.logger.error ("[BLUETOOTH] send_no_trace() : exception. Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
+                time.sleep (1)
+            else: 
+                self.is_awk = True 
+                break 
+
     def send_target(self):
         global recAwkDir
         for i in range(MAX_RESEND_TIMES):
@@ -265,7 +281,8 @@ class BLUE_COM(): # PING PONG TODO
                 self.logger.warning ("[BLUETOOTH] Disconnected, because connection isn't response.")
                 continue
             elif self.client_sock == None and time.time() - self.keepAlive_count >= KEEPALIVE: # Only for client to send "PING"
-                self.sock.send('[PING,mid'+ self.getMid()+']')
+                SEND_AGENT(self.client_sock, 'PING', self.getMid(), self.logger, 0)
+                # self.sock.send('[PING,mid'+ self.getMid()+']')
             #---------RECV -----------# 
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
@@ -301,14 +318,18 @@ class BLUE_COM(): # PING PONG TODO
                         # recbufList.append([mid_str[4:], rec , ""])
                         recAwkDir[mid_str[4:]] = rec
                     elif rec == "PING": # Server recv 
+                        self.logger.info ("[BLUETOOTH] GET PING ")
                         self.keepAlive_count = time.time()
-                        self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
+                        SEND_AGENT(self.client_sock, 'PING', self.getMid(), self.logger, 0)
+                        # self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
                     elif rec == "PONG":# Client  recv 
+                        self.logger.info ("[BLUETOOTH] GET PONG ")
                         self.keepAlive_count = time.time()
                     else: 
                         self.logger.info("[BLUETOOTH] Received: " + rec )
                         self.logger.debug("[BLUETOOTH] Sending AWK")
-                        recv_sock.send( '[AWK,mid'+mid_str[4:]+']') # Send AWK to back to sender 
+                        SEND_AGENT(self.client_sock, 'AWK',mid_str[4:] , self.logger, 0)
+                        # recv_sock.send( '[AWK,mid'+mid_str[4:]+']') # Send AWK to back to sender 
 
                         if rec == "DISCONNECT":
                             recbufList.append([mid_str[4:], rec , ""])
