@@ -94,11 +94,13 @@ class BLUE_COM(): # PING PONG TODO
         self.server_thread.start()
 
     def server_engine_stop(self):
+        self.is_connect = False 
+        self.is_server_engine_running = False 
         try:
-            self.is_connect = False 
-            self.is_server_engine_running = False 
-            self.server_thread.join()
-            self.recv_thread.join()
+            self.logger.info("[BLUETOOTH] Waiting server thread to join...")
+            self.server_thread.join(10)
+            self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
+            self.recv_thread.join(10)
             self.sock.close(self.sock) # Server socket close 
             self.logger.info("[BLUETOOTH] BlueTooth server end")
         except : 
@@ -129,7 +131,7 @@ class BLUE_COM(): # PING PONG TODO
                     #----  Check KeepAlive ------# 
                     if recbufList != []:
                         msg = recbufList.pop(0) # FIFO
-                        if msg[1] == 'DISCONNECT': # Close connection with  client 
+                        if   msg[1] == 'DISCONNECT': # Close connection with  client 
                             self.close(self.client_sock)
                         elif msg[1] == 'PING':
                             self.logger.info("[BLUETOOTH] Get PING  ") 
