@@ -68,8 +68,6 @@ class SEND_AGENT():
                 time.sleep(1) # for rest 
 
 
-        
-
 class BLUE_COM(): # PING PONG TODO 
     def __init__(self, logger):
         # -------- Connection --------# 
@@ -177,11 +175,11 @@ class BLUE_COM(): # PING PONG TODO
         '''
         Only for client socket 
         '''
-        self.sock.settimeout(10) # Timeout 10 sec 
         self.logger.info("[BLUETOOTH] connecting to " + host)
         ts = time.time()
         # Create the client socket
         self.sock=BluetoothSocket(RFCOMM)
+        self.sock.settimeout(10) # Timeout 10 sec 
         try: 
             self.sock.connect((host, port)) # What if can't connected TODO
         except: 
