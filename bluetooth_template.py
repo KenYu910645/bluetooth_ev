@@ -44,9 +44,14 @@ class SEND_AGENT():
             self.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
             t_start = time.time() 
             while time.time() - t_start < WAIT_AWK_MAX_TIME: 
-                ans = recbufDir.pop(self.mid, "not match") # Pop out element, if exitence 
+                # ans = recbufList.pop(self.mid, "not match") # Pop out element, if exitence 
+                ans  = "not match"
+                for i in recbufList: 
+                    if i[0] == self.mid:
+                        ans = i[1] # Msg_type 
+                        break 
                 if ans != "not match": # Get something 
-                    if ans == 'awk':
+                    if ans == 'AWK':
                         self.logger.info("[BLUETOOTH] Get AWK (" + self.mid + ")")
                         self.is_awk = True 
                     else:
