@@ -173,7 +173,7 @@ class BLUE_COM(): # PING PONG TODO
                         else: 
                             self.logger.error("[BLUETOOTH] Unresconized cmd: " + msg[1]) 
                     else:
-                        print ("nothing to do ")
+                        self.logger.debug ("nothing to do ")
                     
                 else: # Need to Reconnect 
                     self.logger.debug("[BLUETOOTH] Waiting for connection on RFCOMM channel %d" % port)
@@ -301,7 +301,7 @@ class BLUE_COM(): # PING PONG TODO
                 self.logger.debug("rec: " + rec)
             except BluetoothError as e:
                 if e.args[0] == 'timed out':
-                    self.logger.info("[BLUETOOTH] recv Timeout." )
+                    self.logger.debug("[BLUETOOTH] recv Timeout." )
                 else:
                     self.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
                 # print ("[recv_engine] timeout ")
