@@ -34,8 +34,8 @@ while is_running:
             time.sleep(0.1)
     time.sleep (1)
 
-print ("[Main] close socket")
-blue_com.close() 
+print ("[Main] DISCONNECT ")
+blue_com.disconnect() 
 
 
 

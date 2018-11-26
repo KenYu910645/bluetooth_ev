@@ -18,6 +18,7 @@ WAIT_AWK_MAX_TIME = 3 # sec
 MAX_RESEND_TIMES = 6 # times 
 START_CHAR = '['
 END_CHAR = ']'
+KEEPALIVE = 2 # sec ping,pong every 2 sec , 
 recbufDir = dict() # key: "MID"  , value ,payload  # TODO infinitly expand 
 
 class SEND_AGENT():
@@ -73,7 +74,8 @@ class BLUE_COM(): # PING PONG TODO
         self.sock = None 
         self.recv_thread = None 
         self.is_server_engine_running = False  
-        self.client_sock = None 
+        self.client_sock = None  # Only for Server 
+        self.keepAlive_count = None 
         #-------- For Recevied -------# 
         # self.recbufArr = []
         self.logger = logger 
@@ -94,13 +96,14 @@ class BLUE_COM(): # PING PONG TODO
             self.is_server_engine_running = False 
             self.server_thread.join()
             self.recv_thread.join()
-            self.sock.close() # Server socket close 
+            self.sock.close(self.sock) # Server socket close 
             print("[BLUETOOTH] BlueTooth server end")
         except : 
             print("[BLUETOOTH] Fail to close socket or server engine.")
 
     def server_engine (self, port): # ToTally Blocking 
-        #client_sock.settimeout(1)               
+        global recbufDir
+        #client_sock.settimeout(1)
         # try:
         if True : 
             while self.is_server_engine_running: # Durable Server
@@ -110,13 +113,26 @@ class BLUE_COM(): # PING PONG TODO
                 self.client_sock = client_sock
                 print("[BLUETOOTH] Accepted connection from "+  str(client_info))
                 self.is_connect = True 
+                self.keepAlive_count = time.time() 
                 # TODO 
                 
                 self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
                 self.recv_thread.start()
 
                 while self.is_connect:
-                    time.sleep(1) 
+                    #----  Check KeepAlive ------# 
+                    # if 
+                    for i in recbufDir: # Got something to do
+                        if recbufDir[i] == 'awk': 
+                            pass 
+                        elif recbufDir[i] == 'DISCONNECT': # Close connection with  client 
+                            self.close(self.client_sock)
+                        elif recbufDir[i] == 'PING':
+                            pass 
+                        else: 
+                            pass 
+                        
+                    time.sleep(0.1) 
 
                 self.logger.warning("[BLUETOOTH] Disconnection from " + str(client_info) + "Stop recv thread.")
                 self.recv_thread.join()
@@ -147,10 +163,19 @@ class BLUE_COM(): # PING PONG TODO
 
             self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))  # (self.sock))
             self.recv_thread.start()
-            
         return rc 
 
-    def close(self): 
+    def disconnect(self): # Normally disconnect  # Only from client -> server 
+        rc = self.send("DISCONNECT")
+        t_s = time.time() 
+        while not rc.is_awk:    
+            if time.time() - t_s  > 3 : # Only wait 3 sec
+                self.logger.warning ("[BLUETOOTH] Fail to send DISCONNECT in 3 sec.") 
+                break
+        
+        self.close(self.sock)  # Close youself. 
+
+    def close(self, socket): 
         # if self.sock != None:
         try: 
             self.is_connect = False 
@@ -159,8 +184,8 @@ class BLUE_COM(): # PING PONG TODO
                 self.recv_thread.join()
                 # print ("[close] waiting join recv_threading ")
             self.logger.info ("[BLUETOOTH] close socket")
-            self.sock.close() 
-            self.sock = None 
+            socket.close() 
+            socket = None 
         # else: 
         except : 
             self.logger.error ("[close] Can't close.")
@@ -213,7 +238,6 @@ class BLUE_COM(): # PING PONG TODO
                     self.logger.error ("[BLUETOOTH] recv_engine MID ERROR ")
 
                 if is_valid: 
-                    # self.recbufArr.append(rec)
                     recbufDir[mid_str[4:]] = rec
                     if rec != "awk":
                         self.logger.info("[BLUETOOTH] Received: " + rec )
