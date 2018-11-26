@@ -101,15 +101,18 @@ class BLUE_COM(): # PING PONG TODO
             self.server_thread.join(10)
         except : 
             self.logger.error("[BLUETOOTH] Fail to close server thread.")
+        
         try:
             self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
             self.recv_thread.join(10)
         except : 
-            self.logger.error("[BLUETOOTH] Fail to close recv  thread.")
+            self.logger.error("[BLUETOOTH] Fail to recv thread.")
+        
         try: 
             self.sock.close(self.sock) # Server socket close 
         except : 
             self.logger.error("[BLUETOOTH] Fail to close socket.")
+        
         self.logger.info("[BLUETOOTH] server engine stop ")
     
     def incoming_connection(self):
@@ -240,6 +243,7 @@ class BLUE_COM(): # PING PONG TODO
                 self.logger.debug("rec: " + rec)
             except : 
                 # print ("[recv_engine] timeout ")
+                print ("except : timeout ")
                 continue 
                 # logger.error("[EVwaitAnswer] read fail")
             else:
