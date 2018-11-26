@@ -45,6 +45,7 @@ class SEND_AGENT():
     def send_no_trace(self) : # QOS0 # PING PONG , AWK
         for i in range(MAX_RESEND_TIMES):
             try: 
+                self.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
                 self.sock.send( '['+self.payload+',mid'+ self.mid+']')
             except : 
                 self.logger.error ("[BLUETOOTH] send_no_trace() : exception. Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
@@ -318,16 +319,16 @@ class BLUE_COM(): # PING PONG TODO
                         # recbufList.append([mid_str[4:], rec , ""])
                         recAwkDir[mid_str[4:]] = rec
                     elif rec == "PING": # Server recv 
-                        self.logger.info ("[BLUETOOTH] GET PING ")
+                        self.logger.info ("[BLUETOOTH] Received PING ")
                         self.keepAlive_count = time.time()
                         SEND_AGENT(self.client_sock, 'PING', self.getMid(), self.logger, 0)
                         # self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
                     elif rec == "PONG":# Client  recv 
-                        self.logger.info ("[BLUETOOTH] GET PONG ")
+                        self.logger.info ("[BLUETOOTH] Received PONG ")
                         self.keepAlive_count = time.time()
                     else: 
                         self.logger.info("[BLUETOOTH] Received: " + rec )
-                        self.logger.debug("[BLUETOOTH] Sending AWK")
+                        # self.logger.debug("[BLUETOOTH] Sending AWK")
                         SEND_AGENT(self.client_sock, 'AWK',mid_str[4:] , self.logger, 0)
                         # recv_sock.send( '[AWK,mid'+mid_str[4:]+']') # Send AWK to back to sender 
 
