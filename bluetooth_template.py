@@ -113,7 +113,7 @@ class BLUE_COM(): # PING PONG TODO
         self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
         self.recv_thread.start()
     
-    def server_engine (self): # ToTally Blocking 
+    def server_engine (self, port ): # ToTally Blocking 
         global recbufDir
         #client_sock.settimeout(1)
         # try:
