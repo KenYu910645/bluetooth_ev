@@ -47,8 +47,8 @@ class SEND_AGENT():
             try: 
                 self.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
                 self.sock.send( '['+self.payload+',mid'+ self.mid+']')
-            except : 
-                self.logger.error ("[BLUETOOTH] send_no_trace() : exception. Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
+            except Exception as e : 
+                self.logger.error ("[BLUETOOTH] send_no_trace() : "+ str(e) + ". Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
                 time.sleep (1)
             else: 
                 self.is_awk = True 
