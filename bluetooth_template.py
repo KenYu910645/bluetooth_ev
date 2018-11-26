@@ -7,7 +7,6 @@
 # $Id: rfcomm-client.py 424 2006-08-24 03:35:54Z albert $
 
 from bluetooth import *
-import socket
 from global_logger import logger 
 import sys
 import time
@@ -156,8 +155,12 @@ class BLUE_COM(): # PING PONG TODO
                     self.sock.settimeout(10)
                     try: 
                         client_sock, client_info = self.sock.accept() # Blocking for 10 sec
-                    except socket.timeout:
-                        self.logger.debug("[BLUETOOTH] Timeout." )
+                    except BluetoothError as e:
+                        if e.args[0] == 'timed out':
+                            self.logger.debug("[BLUETOOTH] Timeout." )
+                        else:
+                            self.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
+                       
                     else: 
                         self.client_sock = client_sock
                         self.logger.info("[BLUETOOTH] Accepted connection from "+  str(client_info))
@@ -257,12 +260,13 @@ class BLUE_COM(): # PING PONG TODO
             try: 
                 rec = recv_sock.recv(1024) # Blocking for 1 sec. 
                 self.logger.debug("rec: " + rec)
-            except socket.timeout: 
+            except BluetoothError as e:
+                if e.args[0] == 'timed out':
+                    self.logger.info("[BLUETOOTH] recv Timeout." )
+                else:
+                    self.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
                 # print ("[recv_engine] timeout ")
-                print ("except : timeout ")
                 # logger.error("[EVwaitAnswer] read fail")
-            except:
-                self.logger.error("[BLUETOOTH] something wrong at recv()")
             else:
                 is_valid = False 
                 try:
