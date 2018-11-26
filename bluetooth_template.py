@@ -112,7 +112,7 @@ class BLUE_COM(): # PING PONG TODO
             self.logger.error("[BLUETOOTH] Fail to close socket.")
         
         self.logger.info("[BLUETOOTH] server engine stop ")
-    
+    '''
     def incoming_connection(self):
         self.logger.debug("[BLUETOOTH] Waiting for connection on RFCOMM channel %d" % 3)
         client_sock, client_info = self.sock.accept() # Blocking 
@@ -123,6 +123,7 @@ class BLUE_COM(): # PING PONG TODO
         
         self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
         self.recv_thread.start()
+    '''
     
     def server_engine (self, port): # ToTally Blocking 
         global recbufList
@@ -150,13 +151,21 @@ class BLUE_COM(): # PING PONG TODO
                         print ("nothing to do ")
                     
                 else: # Need to Reconnect 
-                    connection_threading  = threading.Thread(target = self.incoming_connection)
-                    connection_threading.start()
-                    print "Before "
-                    connection_threading.join(10) # Blocking for 10 sec 
-                    print "After "
-
-
+                    self.logger.debug("[BLUETOOTH] Waiting for connection on RFCOMM channel %d" % port)
+                    self.sock.settimeout(10)
+                    client_sock, client_info = self.sock.accept() # Blocking for 10 sec 
+                    self.client_sock = client_sock
+                    self.logger.info("[BLUETOOTH] Accepted connection from "+  str(client_info))
+                    self.is_connect = True 
+                    self.keepAlive_count = time.time() 
+                    
+                    self.recv_thread = threading.Thread(target = self.recv_engine, args=(client_sock,))
+                    self.recv_thread.start()
+                    #connection_threading  = threading.Thread(target = self.incoming_connection)
+                    #connection_threading.start()
+                    #print "Before "
+                    #connection_threading.join(10) # Blocking for 10 sec 
+                    #print "After "
                 time.sleep(0.1) 
                 # TODO 
                 #self.logger.warning("[BLUETOOTH] Disconnection from " + str(client_info) + "Stop recv thread.")
