@@ -191,7 +191,7 @@ class BLUE_COM(): # PING PONG TODO
                         self.is_connect = True 
                         self.keepAlive_count = time.time() 
                         
-                        self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))
+                        self.recv_thread = threading.Thread(target = self.recv_engine) # , args=(self.sock,))
                         self.recv_thread.start()
                         #connection_threading  = threading.Thread(target = self.incoming_connection)
                         #connection_threading.start()
@@ -235,7 +235,7 @@ class BLUE_COM(): # PING PONG TODO
             self.keepAlive_count = time.time()
             self.logger.info("[BLUETOOTH] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
-            self.recv_thread = threading.Thread(target = self.recv_engine, args=(self.sock,))  # (self.sock))
+            self.recv_thread = threading.Thread(target = self.recv_engine)# , args=(self.sock,))  # (self.sock))
             self.recv_thread.start()
         return rc 
 
