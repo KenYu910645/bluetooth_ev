@@ -47,7 +47,6 @@ class SEND_AGENT(object):
             if not self.bl_obj.is_connect:
                 self.bl_obj.logger.info("[BLUETOOTH] Lost connection, Give up sending " + self.payload)
                 return 
-
             try: 
                 self.bl_obj.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
                 self.bl_obj.sock.send( '['+self.payload+',mid'+ self.mid+']')
@@ -112,9 +111,11 @@ class BLUE_COM(object): # PING PONG TODO
         self.is_connect = False
         self.sock = None # Communicate sock , not server socket 
         self.recv_thread = None 
-        self.is_server_engine_running = False  
+        self.engine_thread = None 
+        self.is_engine_running = False  
         self.server_sock = None  # Only for Server 
         self.keepAlive_count = None 
+        self.ping_count = None 
         #-------- For Recevied -------# 
         # self.recbufArr = []
         self.logger = logger 
@@ -126,16 +127,16 @@ class BLUE_COM(object): # PING PONG TODO
         self.server_sock.bind(("",port))
         self.server_sock.listen(1)
 
-        self.is_server_engine_running = True 
-        self.server_thread = threading.Thread(target = self.server_engine, args=(port,))
-        self.server_thread.start()
+        self.is_engine_running = True 
+        self.engine_thread = threading.Thread(target = self.server_engine, args=(port,))
+        self.engine_thread.start()
 
     def server_engine_stop(self):
         self.is_connect = False 
-        self.is_server_engine_running = False 
+        self.is_engine_running = False 
         try:
             self.logger.info("[BLUETOOTH] Waiting server thread to join...")
-            self.server_thread.join(10)
+            self.engine_thread.join(10)
         except : 
             self.logger.error("[BLUETOOTH] Fail to join server thread.")
         
@@ -146,7 +147,7 @@ class BLUE_COM(object): # PING PONG TODO
             self.logger.error("[BLUETOOTH] Fail to join recv thread.")
         
         try: 
-            self.server_sock.close(self.server_sock) # Server socket close 
+            self.close(self.server_sock) # Server socket close 
         except : 
             self.logger.error("[BLUETOOTH] Fail to close socket.")
         
@@ -169,7 +170,7 @@ class BLUE_COM(object): # PING PONG TODO
         #client_sock.settimeout(1)
         # try:
         if True : 
-            while self.is_server_engine_running: # Durable Server
+            while self.is_engine_running: # Durable Server
                 #---------
                 #print "Before"
                 # gobject.io_add_watch(self.sock, gobject.IO_IN, self.incoming_connection)
@@ -225,8 +226,58 @@ class BLUE_COM(object): # PING PONG TODO
             # print("[main] disconnected from " + str(client_info))
         
         # client_sock.close()
+    
+    def client_engine_start(self):
+        self.engine_thread = threading.Thread(target = self.client_engine)
+        self.engine_thread.start()
+    
+    def client_engine_stop(self):
+        self.client_disconnect() # Block for 3 sec to send DISCONNECT to server . 
+        self.is_connect = False
+        self.is_engine_running = False
+        try:
+            self.logger.info("[BLUETOOTH] Waiting server thread to join...")
+            self.engine_thread.join(10)
+        except : 
+            self.logger.error("[BLUETOOTH] Fail to join server thread.")
+        
+        try:
+            self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
+            self.recv_thread.join(10)
+        except : 
+            self.logger.error("[BLUETOOTH] Fail to join recv thread.")
+        
+        try: 
+            self.close(self.sock)
+        except : 
+            self.logger.error("[BLUETOOTH] Fail to close socket.")
+        self.logger.info("[BLUETOOTH] server engine stop ")
+    
+    
+    def client_engine(self):
+        while self.is_engine_running: 
+            if self.is_connect: 
+                # ------- PING PONG -------# Keep alive 
+                if time.time() - self.keepAlive_count >= KEEPALIVE * 1.5 : # Give up connection
+                    self.is_connect = False 
+                    self.logger.warning ("[BLUETOOTH] Disconnected, because KEEPAVLIE isn't response. (PING, PONG)")
+                # TODO TODO TODO 
+                elif  time.time() - self.ping_count >= KEEPALIVE: # Only for client to send "PING"
+                    self.send('PING', 0)
+                    self.ping_count = time.time()
+                    # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
+                    # self.sock.send('[PING,mid'+ self.getMid()+']')
+                #------- Check List --------# 
+                if recbufList != []: # Something to do 
+                    msg = recbufList.pop(0)
+                    self.BT_cmd_CB(msg)
+            else: 
+                logger.info("[Main] Reconnected.")
+                self.client_connect('B8:27:EB:51:BF:F5', 3)
+            time.sleep(0.1)
+    
 
-    def connect (self, host = 'B8:27:EB:51:BF:F5', port = 3):
+    def client_connect  (self, host = 'B8:27:EB:51:BF:F5', port = 3):
         '''
         Only for client socket 
         '''
@@ -247,13 +298,15 @@ class BLUE_COM(object): # PING PONG TODO
             rc = True 
             self.is_connect = True 
             self.keepAlive_count = time.time()
+            self.ping_count = time.time()
             self.logger.info("[BLUETOOTH] connected. Spend " + str(time.time() - ts) + " sec.") #Link directly, Faster ????? TODO 
 
             self.recv_thread = threading.Thread(target = self.recv_engine)# , args=(self.sock,))  # (self.sock))
             self.recv_thread.start()
         return rc 
 
-    def disconnect(self): # Normally disconnect  # Only from client -> server 
+
+    def client_disconnect(self): # Normally disconnect  # Only from client -> server 
         if self.is_connect: 
             rc = self.send("DISCONNECT", 1)
             t_s = time.time() 
@@ -303,15 +356,6 @@ class BLUE_COM(object): # PING PONG TODO
         global recbufList, recAwkDir
         self.sock.settimeout(1)
         while self.is_connect:
-            # ------- PING PONG -------# Keep alive 
-            if time.time() - self.keepAlive_count >= KEEPALIVE * 1.5 : # Give up connection
-                self.is_connect = False 
-                self.logger.warning ("[BLUETOOTH] Disconnected, because connection isn't response.")
-                continue
-            elif self.is_server_engine_running == False and time.time() - self.keepAlive_count >= KEEPALIVE*0.9: # Only for client to send "PING"
-                self.send('PING', 0)
-                # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
-                # self.sock.send('[PING,mid'+ self.getMid()+']')
             #---------RECV -----------# 
             try: 
                 rec = self.sock.recv(1024) # Blocking for 1 sec. 
@@ -366,9 +410,7 @@ class BLUE_COM(object): # PING PONG TODO
                             recbufList.append([mid_str[4:], rec , ""])
                         else :  # CMD
                             recbufList.append([mid_str[4:], "CMD" , rec ])
-                            print ("Before ")
                             self.BT_cmd_CB(rec)
-                            print ("AFter ")
                 else: 
                     self.logger.error("[[BLUETOOTH]] received not valid msg.")
                 # ------ Reset Flag --------# 

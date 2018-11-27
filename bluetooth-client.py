@@ -16,15 +16,16 @@ signal.signal(signal.SIGTERM, sigint_handler)
 
 WAIT_AWK_MAX_TIME = 20 # sec 
 
-
-
 def BT_cmd_CB (msg):
-    logger.info("Get msg from main : " + msg) 
+    logger.info("Get msg from BT_cmd_CB : " + msg) 
     
 
 blue_com = BLUE_COM(logger, BT_cmd_CB)
+blue_com.client_engine_start()
 # blue_com.connect('B8:27:EB:51:BF:F5', 3)
-
+while is_running:
+    pass 
+'''
 while is_running: 
     if blue_com.is_connect: 
         
@@ -41,10 +42,10 @@ while is_running:
         logger.info("[Main] Reconnected.")
         blue_com.connect('B8:27:EB:51:BF:F5', 3)
     time.sleep(1)
-
+'''
 
 print ("[Main] DISCONNECT ")
-blue_com.disconnect() 
+blue_com.client_engine_stop() 
 
 
 
