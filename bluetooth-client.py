@@ -3,6 +3,7 @@
 from bluetooth_template import BLUE_COM
 from global_logger import logger
 import signal 
+import threading 
 import time 
 
 is_running = True
@@ -23,11 +24,26 @@ def BT_cmd_CB (msg):
 blue_com = BLUE_COM(logger, BT_cmd_CB)
 blue_com.client_engine_start()
 # blue_com.connect('B8:27:EB:51:BF:F5', 3)
-while is_running:
-    message = raw_input('Send:')
-    blue_com.send(message)
+
+type_msg = "" 
+
+def input_fun(): 
+    global type_msg
+    while is_running: 
+        type_msg = raw_input('Send:')
+
+input_thread = threading.Thread(target = input_fun)# , args=(self.sock,))  # (self.sock))
+input_thread.start()
+while is_running :
+    if type_msg != "":
+        blue_com.send(type_msg)
+        type_msg = ""
+
+    # Wait 1 sec 
     time.sleep(1)
-    pass 
+print ("Before")
+input_thread.join(5)
+print ("After ")
 '''
 while is_running: 
     if blue_com.is_connect: 
@@ -48,7 +64,7 @@ while is_running:
 '''
 
 print ("[Main] DISCONNECT ")
-blue_com.client_engine_stop() 
+blue_com.client_engine_stop()
 
 
 

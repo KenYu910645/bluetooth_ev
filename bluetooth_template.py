@@ -132,25 +132,7 @@ class BLUE_COM(object): # PING PONG TODO
         self.engine_thread.start()
 
     def server_engine_stop(self):
-        self.is_connect = False 
-        self.is_engine_running = False 
-        try:
-            self.logger.info("[BLUETOOTH] Waiting server thread to join...")
-            self.engine_thread.join(10)
-        except : 
-            self.logger.error("[BLUETOOTH] Fail to join server thread.")
-        
-        try:
-            self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
-            self.recv_thread.join(10)
-        except : 
-            self.logger.error("[BLUETOOTH] Fail to join recv thread.")
-        
-        try: 
-            self.close(self.server_sock) # Server socket close 
-        except : 
-            self.logger.error("[BLUETOOTH] Fail to close socket.")
-        
+        self.shutdown_threads()
         self.logger.info("[BLUETOOTH] server engine stop ")
     '''
     def incoming_connection(self):
@@ -234,27 +216,32 @@ class BLUE_COM(object): # PING PONG TODO
     
     def client_engine_stop(self):
         self.client_disconnect() # Block for 3 sec to send DISCONNECT to server . 
+        self.shutdown_threads()
+        self.close(self.sock)
+        # self.logger.error("[BLUETOOTH] Fail to close socket.")
+        self.logger.info("[BLUETOOTH] client engine stop ")
+    
+    def shutdown_threads(self):
         self.is_connect = False
         self.is_engine_running = False
         try:
-            self.logger.info("[BLUETOOTH] Waiting server thread to join...")
-            self.engine_thread.join(10)
+            if self.engine_thread == None : 
+                self.logger.info("[BLUETOOTH] engine_thread didn't start yet ....")
+            else: 
+                self.logger.info("[BLUETOOTH] Waiting engine_thread to join...")
+                self.engine_thread.join(10)
         except : 
-            self.logger.error("[BLUETOOTH] Fail to join server thread.")
+            self.logger.error("[BLUETOOTH] Fail to join engine_thread.")
         
         try:
-            self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
-            self.recv_thread.join(10)
+            if self.recv_thread == None :
+                self.logger.info("[BLUETOOTH] recv_thread didn't start yet ....")
+            else:
+                self.logger.info("[BLUETOOTH] Waiting recv thread to join...")
+                self.recv_thread.join(10)
         except : 
             self.logger.error("[BLUETOOTH] Fail to join recv thread.")
-        
-        try: 
-            self.close(self.sock)
-        except : 
-            self.logger.error("[BLUETOOTH] Fail to close socket.")
-        self.logger.info("[BLUETOOTH] server engine stop ")
-    
-    
+
     def client_engine(self):
         while self.is_engine_running: 
             if self.is_connect: 
@@ -321,19 +308,24 @@ class BLUE_COM(object): # PING PONG TODO
             self.logger.warning ("[BLUETOOTH] No need for disconnect, Connection already lost.")
 
     def close(self, socket): 
-        # if self.sock != None:
-        try: 
-            self.is_connect = False 
-            if self.recv_thread.is_alive():
-                self.logger.info ("[BLUETOOTH] waiting join recv_threading ")
-                self.recv_thread.join()
-                # print ("[close] waiting join recv_threading ")
-            self.logger.info ("[BLUETOOTH] close socket")
-            socket.close() 
-            socket = None 
-        # else: 
+        self.is_connect = False 
+        try: # to close recv_threading 
+            if self.recv_thread == None : 
+                self.logger.info("[BLUETOOTH] recv_thread didn't start yet ....")
+            else: 
+                if self.recv_thread.is_alive():
+                    self.logger.info ("[BLUETOOTH] waiting join recv_threading ")
+                    self.recv_thread.join(5)
+                    # print ("[close] waiting join recv_threading ")
+                self.logger.info ("[BLUETOOTH] close socket")
         except : 
-            self.logger.error ("[close] Can't close.")
+            self.logger.error ("[BLUETOOTH] Exception at close recv_thread.")
+        try: 
+            socket.close()
+            self.logger.info("[BLUETOOTH] Socket close.")
+            socket = None
+        except: 
+            self.logger.error ("[BLUETOOTH] Can't close socket .")
     
     def getMid(self):
         '''
