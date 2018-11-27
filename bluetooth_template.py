@@ -25,14 +25,14 @@ KEEPALIVE = 2 # sec ping,pong every 2 sec ,
 recbufList  = [] # [mid  ,  msg_type , content ]
 recAwkDir = dict() # key: "MID" , value "AWK"
 
-class SEND_AGENT():
-    def __init__(self, sock, payload, mid, logger, qos = 1):
+class SEND_AGENT(object):
+    def __init__(self, bl_obj, payload, mid, qos = 1):
         self.payload  = payload 
-        self.sock = sock
+        self.bl_obj = bl_obj
         self.mid = mid 
         self.is_awk = False
         self.qos = qos 
-        self.logger = logger
+        # self.logger = logger
         #
         if qos == 1 : 
             self.send_thread = threading.Thread(target = self.send_target) # Client sock ????
@@ -45,26 +45,32 @@ class SEND_AGENT():
     def send_no_trace(self) : # QOS0 # PING PONG , AWK
         for i in range(MAX_RESEND_TIMES):
             try: 
-                self.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
-                self.sock.send( '['+self.payload+',mid'+ self.mid+']')
+                self.bl_obj.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
+                self.bl_obj.sock.send( '['+self.payload+',mid'+ self.mid+']')
             except Exception as e : 
-                self.logger.error ("[BLUETOOTH] send_no_trace() : "+ str(e) + ". Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
-                time.sleep (1)
+                self.bl_obj.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
+                self.bl_obj.logger.error("[BLUETOOTH] Urge disconnected by send exception, when sending " + self.payload)
+                self.bl_obj.is_connect = False 
+                return 
             else: 
                 self.is_awk = True 
                 return 
-        self.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
+        self.bl_obj.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
 
     def send_target(self):
         global recAwkDir
         for i in range(MAX_RESEND_TIMES):
             #------ Send message -------#  # TODO 
             try: 
-                self.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
-                self.sock.send( '['+self.payload+',mid'+ self.mid+']')
-            except Exception as e : 
-                self.logger.error ("[BLUETOOTH] send_target() : "+ str(e) + ". Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
-                time.sleep (1)
+                self.bl_obj.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
+                self.bl_obj.sock.send( '['+self.payload+',mid'+ self.mid+']')
+            except Exception as e :
+                self.bl_obj.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
+                self.bl_obj.logger.error("[BLUETOOTH] Urge disconnected by send exception, when sending " + self.payload)
+                self.bl_obj.is_connect = False 
+                return 
+                # self.logger.error ("[BLUETOOTH] send_target() : "+ str(e) + ". Retry " + str(i) + "/" + str(MAX_RESEND_TIMES) ) 
+                # time.sleep (1)
             else: 
                 t_start = time.time() 
                 while time.time() - t_start < WAIT_AWK_MAX_TIME: 
@@ -75,7 +81,7 @@ class SEND_AGENT():
                     #        ans = recbufList.pop(i) # Msg_type 
                     #        break 
                     if ans != "not match": # Get AWK 
-                        self.logger.info("[BLUETOOTH] Get AWK (" + self.mid + ")")
+                        self.bl_obj.logger.info("[BLUETOOTH] Get AWK (" + self.mid + ")")
                         self.is_awk = True 
                         break
                     else: # Keep waiting 
@@ -87,13 +93,13 @@ class SEND_AGENT():
                 if self.is_awk : 
                     return 
                 else: 
-                    self.logger.warning("[BLUETOOTH] Need to resend (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ", "+ self.mid +")")
+                    self.bl_obj.logger.warning("[BLUETOOTH] Need to resend (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ", "+ self.mid +")")
                     time.sleep(1) # for rest 
-        self.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
+        self.bl_obj.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
 
 
 
-class BLUE_COM(): # PING PONG TODO 
+class BLUE_COM(object): # PING PONG TODO 
     def __init__(self, logger):
         # -------- Connection --------# 
         self.is_connect = False
@@ -280,7 +286,7 @@ class BLUE_COM(): # PING PONG TODO
         '''
         if mid == None : 
             mid = self.getMid()
-        return SEND_AGENT(self.sock, payload, self.getMid(), self.logger, qos)
+        return SEND_AGENT(self, payload, self.getMid(), qos)
 
     def recv_engine(self): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
         global recbufList, recAwkDir
@@ -298,15 +304,17 @@ class BLUE_COM(): # PING PONG TODO
             #---------RECV -----------# 
             try: 
                 rec = self.sock.recv(1024) # Blocking for 1 sec. 
-                self.logger.debug("rec: " + rec)
             except BluetoothError as e:
                 if e.args[0] == 'timed out':
                     self.logger.debug("[BLUETOOTH] recv Timeout." )
                 else:
                     self.logger.error("[BLUETOOTH] BluetoothError: " + str(e) )
+                    self.logger.error("[BLUETOOTH] Urge disconnected by recv exception.")
+                    self.is_connect = False 
                 # print ("[recv_engine] timeout ")
                 # logger.error("[EVwaitAnswer] read fail")
             else:
+                self.logger.debug("rec: " + rec)
                 is_valid = False 
                 try:
                     #---------  Check start and end Char -------# 
@@ -333,7 +341,7 @@ class BLUE_COM(): # PING PONG TODO
                         self.logger.info ("[BLUETOOTH] Received PING ")
                         self.keepAlive_count = time.time()
                         # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
-                        self.send('PONG', 0)
+                        self.send('PONG', 0, mid=mid_str[4:]) # Send the same mid with PING 
                         # self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
                     elif rec == "PONG":# Client  recv 
                         self.logger.info ("[BLUETOOTH] Received PONG ")
