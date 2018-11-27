@@ -93,7 +93,7 @@ class SEND_AGENT(object):
                 if self.is_awk : 
                     return 
                 else: 
-                    self.bl_obj.logger.warning("[BLUETOOTH] Need to resend (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ", "+ self.mid +")")
+                    self.bl_obj.logger.warning("[BLUETOOTH] Need to resend "+ self.payload +" (" + str(i) + "/" + str(MAX_RESEND_TIMES) + ", "+ self.mid +")")
                     time.sleep(1) # for rest 
         self.bl_obj.logger.error ("[BLUETOOTH] Fail to Send After trying " + str(MAX_RESEND_TIMES) + " times. Abort." )
 
@@ -246,13 +246,16 @@ class BLUE_COM(object): # PING PONG TODO
         return rc 
 
     def disconnect(self): # Normally disconnect  # Only from client -> server 
-        rc = self.send("DISCONNECT", 1)
-        t_s = time.time() 
-        while not rc.is_awk:    
-            if time.time() - t_s  > 3 : # Only wait 3 sec
-                self.logger.warning ("[BLUETOOTH] Fail to send DISCONNECT in 3 sec.") 
-                break
-        self.close(self.sock)  # Close youself. 
+        if self.is_connect: 
+            rc = self.send("DISCONNECT", 1)
+            t_s = time.time() 
+            while not rc.is_awk:    
+                if time.time() - t_s  > 3 : # Only wait 3 sec
+                    self.logger.warning ("[BLUETOOTH] Fail to send DISCONNECT in 3 sec.") 
+                    break
+            self.close(self.sock)  # Close youself. 
+        else: 
+            self.logger.warning ("[BLUETOOTH] No need for disconnect, Connection already lost.")
 
     def close(self, socket): 
         # if self.sock != None:
@@ -286,7 +289,7 @@ class BLUE_COM(object): # PING PONG TODO
         '''
         if mid == None : 
             mid = self.getMid()
-        return SEND_AGENT(self, payload, self.getMid(), qos)
+        return SEND_AGENT(self, payload, mid, qos)
 
     def recv_engine(self): # Totolly -blocking  TODO  # Only block when something is need to recv , MAX BLOCK time is REC_TIMEOUT
         global recbufList, recAwkDir

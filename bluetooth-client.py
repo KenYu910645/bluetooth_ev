@@ -23,7 +23,7 @@ blue_com = BLUE_COM(logger)
 
 while is_running: 
     if blue_com.is_connect: 
-        '''
+        
         sa = blue_com.send("hello world")
         ts = time.time()
         while time.time() - ts < WAIT_AWK_MAX_TIME: 
@@ -31,12 +31,12 @@ while is_running:
                 break
             else:
                 time.sleep(0.1)
-        '''
-        time.sleep (1)
+        
+        
     else: 
         logger.info("[Main] Reconnected.")
         blue_com.connect('B8:27:EB:51:BF:F5', 3)
-        time.sleep(1)
+    time.sleep(1)
 
 
 print ("[Main] DISCONNECT ")
