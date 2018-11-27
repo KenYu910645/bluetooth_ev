@@ -228,6 +228,7 @@ class BLUE_COM(object): # PING PONG TODO
         # client_sock.close()
     
     def client_engine_start(self):
+        self.is_engine_running = True 
         self.engine_thread = threading.Thread(target = self.client_engine)
         self.engine_thread.start()
     
@@ -272,7 +273,7 @@ class BLUE_COM(object): # PING PONG TODO
                     msg = recbufList.pop(0)
                     self.BT_cmd_CB(msg)
             else: 
-                logger.info("[Main] Reconnected.")
+                # logger.info("[client_engine] Reconnected.")
                 self.client_connect('B8:27:EB:51:BF:F5', 3)
             time.sleep(0.1)
     
