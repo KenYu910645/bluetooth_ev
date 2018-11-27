@@ -16,9 +16,13 @@ signal.signal(signal.SIGTERM, sigint_handler)
 
 WAIT_AWK_MAX_TIME = 20 # sec 
 
-blue_com = BLUE_COM(logger)
+
+
+def BT_cmd_CB (msg):
+    logger.info("Get msg from main : " + msg) 
     
 
+blue_com = BLUE_COM(logger, BT_cmd_CB)
 # blue_com.connect('B8:27:EB:51:BF:F5', 3)
 
 while is_running: 

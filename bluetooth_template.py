@@ -44,6 +44,10 @@ class SEND_AGENT(object):
         
     def send_no_trace(self) : # QOS0 # PING PONG , AWK
         for i in range(MAX_RESEND_TIMES):
+            if not self.bl_obj.is_connect:
+                self.bl_obj.logger.info("[BLUETOOTH] Lost connection, Give up sending " + self.payload)
+                return 
+
             try: 
                 self.bl_obj.logger.info("[BLUETOOTH] Sending " + self.payload + "(" + self.mid + ")")
                 self.bl_obj.sock.send( '['+self.payload+',mid'+ self.mid+']')
@@ -60,6 +64,9 @@ class SEND_AGENT(object):
     def send_target(self):
         global recAwkDir
         for i in range(MAX_RESEND_TIMES):
+            if not self.bl_obj.is_connect:
+                self.bl_obj.logger.info("[BLUETOOTH] Lost connection, Give up sending " + self.payload)
+                return 
             #------ Send message -------#  # TODO 
             try: 
                 self.bl_obj.logger.info("[BLUETOOTH] Sending: " + self.payload + "(" + self.mid + ")") # totally non-blocking even if disconnect
@@ -100,7 +107,7 @@ class SEND_AGENT(object):
 
 
 class BLUE_COM(object): # PING PONG TODO 
-    def __init__(self, logger):
+    def __init__(self, logger, BT_cmd_CB):
         # -------- Connection --------# 
         self.is_connect = False
         self.sock = None # Communicate sock , not server socket 
@@ -111,6 +118,7 @@ class BLUE_COM(object): # PING PONG TODO
         #-------- For Recevied -------# 
         # self.recbufArr = []
         self.logger = logger 
+        self.BT_cmd_CB  = BT_cmd_CB
         # self.tid_counter = 0
     
     def server_engine_start(self, port = 3): # Totolly blocking function 
@@ -300,7 +308,7 @@ class BLUE_COM(object): # PING PONG TODO
                 self.is_connect = False 
                 self.logger.warning ("[BLUETOOTH] Disconnected, because connection isn't response.")
                 continue
-            elif self.is_server_engine_running == False and time.time() - self.keepAlive_count >= KEEPALIVE: # Only for client to send "PING"
+            elif self.is_server_engine_running == False and time.time() - self.keepAlive_count >= KEEPALIVE*0.9: # Only for client to send "PING"
                 self.send('PING', 0)
                 # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
                 # self.sock.send('[PING,mid'+ self.getMid()+']')
@@ -337,29 +345,30 @@ class BLUE_COM(object): # PING PONG TODO
                     self.logger.error ("[BLUETOOTH] recv_engine MID ERROR ")
 
                 if is_valid: 
+                    self.logger.info ("[BLUETOOTH] Received: " + rec )
                     if rec == "AWK":
                         # recbufList.append([mid_str[4:], rec , ""])
                         recAwkDir[mid_str[4:]] = rec
                     elif rec == "PING": # Server recv 
-                        self.logger.info ("[BLUETOOTH] Received PING ")
                         self.keepAlive_count = time.time()
                         # SEND_AGENT(self.sock, 'PING', self.getMid(), self.logger, 0)
                         self.send('PONG', 0, mid=mid_str[4:]) # Send the same mid with PING 
                         # self.client_sock.send( '[PONG,mid'+ self.getMid()+']')
                     elif rec == "PONG":# Client  recv 
-                        self.logger.info ("[BLUETOOTH] Received PONG ")
                         self.keepAlive_count = time.time()
-                    else: 
-                        self.logger.info("[BLUETOOTH] Received: " + rec )
+                    else:
                         # self.logger.debug("[BLUETOOTH] Sending AWK")
                         self.send('AWK', 0, mid = mid_str[4:])
                         # SEND_AGENT(self.sock, 'AWK',mid_str[4:] , self.logger, 0)
                         # recv_sock.send( '[AWK,mid'+mid_str[4:]+']') # Send AWK to back to sender 
-
+                        
                         if rec == "DISCONNECT":
                             recbufList.append([mid_str[4:], rec , ""])
                         else :  # CMD
                             recbufList.append([mid_str[4:], "CMD" , rec ])
+                            print ("Before ")
+                            self.BT_cmd_CB(rec)
+                            print ("AFter ")
                 else: 
                     self.logger.error("[[BLUETOOTH]] received not valid msg.")
                 # ------ Reset Flag --------# 

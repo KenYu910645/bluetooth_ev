@@ -26,7 +26,10 @@ signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
 
-blue_com = BLUE_COM(logger)
+def BT_cmd_CB(msg):
+    logger.info("Get msg from main : " + msg) 
+
+blue_com = BLUE_COM(logger, BT_cmd_CB)
 
 blue_com.server_engine_start(port = 3)
 
