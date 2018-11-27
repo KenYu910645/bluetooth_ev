@@ -274,7 +274,8 @@ class BLUE_COM(object): # PING PONG TODO
                     self.BT_cmd_CB(msg)
             else: 
                 # logger.info("[client_engine] Reconnected.")
-                self.client_connect('B8:27:EB:51:BF:F5', 3)
+                if not self.client_connect('B8:27:EB:51:BF:F5', 3):
+                    time.sleep(1) # Sleep 1 sec for next reconnection
             time.sleep(0.1)
     
 
@@ -291,7 +292,7 @@ class BLUE_COM(object): # PING PONG TODO
             self.sock.connect((host, port)) # What if can't connected TODO
         except BluetoothError as e:
             if e.args[0] == 'timed out':
-                self.logger.debug("[BLUETOOTH] Connection Timeout 10 sec ." )
+                self.logger.error("[BLUETOOTH] Connection Timeout 10 sec ." )
             else:
                 self.logger.error("[BLUETOOTH] Not able to Connect, BluetoothError: " + str(e) )
             rc = False 
