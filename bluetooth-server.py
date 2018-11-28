@@ -6,17 +6,9 @@ import threading
 import time 
 import signal
 
-'''
-uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
-
-advertise_service( server_sock, "SampleServer",
-                   service_id = uuid,
-                   service_classes = [ uuid, SERIAL_PORT_CLASS ],
-                   profiles = [ SERIAL_PORT_PROFILE ], 
-#                   protocols = [ OBEX_UUID ] 
-                    )
-'''
-
+######################
+###  Exit handler  ###
+######################
 is_running = True
 def sigint_handler(signum, frame):
     global is_running
@@ -26,16 +18,35 @@ signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
 
+
+###########################
+###  Callback function  ###
+###########################
 def BT_cmd_CB(msg):
     logger.info("Get msg from main : " + msg) 
 
-blue_com = BLUE_COM(logger, BT_cmd_CB)
 
-blue_com.server_engine_start(port = 3)
+#########################################
+###   Config of bluetooth connction   ###
+#########################################
+blue_com = BLUE_COM(logger, BT_cmd_CB, host = None , port = 3 )
 
+############################################
+###   Start server engine at background  ###
+############################################
+blue_com.server_engine_start()
+
+
+###############
+###  Loop   ###
+###############
 while is_running:
-    pass 
+    time.sleep(1)
 print ("[Main] server_engine_stop")
+
+#####################
+###   End Engine  ###
+#####################
 blue_com.server_engine_stop()
 
 
